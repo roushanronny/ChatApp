@@ -1,0 +1,23 @@
+*******Message Model*******
+
+roushan(sender)----> "Hello"
+kuamr(receiver) -->"Hii"
+
+
+_id =jksdjkn (mongoDB)
+senderID = 88bb103525cb1f0745af7452
+receiverID = 88bb2ebc3395e1ee6332aa1d
+Message ="Hello"
+
+
+_id =jksdjkjhdfn (mongoDB)
+senderID = 88bb2ebc3395e1ee6332aa1d  
+receiverID = 88bb103525cb1f0745af7452
+Message ="Hi"
+
+
+Conversation Model
+
+_id = hksgdjfhsjghf (mongoDB)
+member[senderID,receiverID]
+Message[_id]
