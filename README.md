@@ -1,1 +1,1 @@
-# react-node-chatapp
+# ChatApp
