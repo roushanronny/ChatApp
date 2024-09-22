@@ -20,7 +20,7 @@ function Signup() {
     return value === password || "Passwords do not match";
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async(data) => {
     const userInfo = {
       fullname: data.fullname,
       email: data.email,
@@ -33,8 +33,10 @@ function Signup() {
       .then((response) => {
         if (response.data) {
           toast.success("Signup successful");
+          //alert("signup successful! you can now log in.")
         }
-        localStorage.setItem("ChatApp", JSON.stringify(response.data));
+        //localStorage.setItem("messenger", JSON.stringify(response.data));
+        localStorage.setItem("ChatApp",JSON.stringify(response.data));
         setAuthUser(response.data);
       })
       .catch((error) => {

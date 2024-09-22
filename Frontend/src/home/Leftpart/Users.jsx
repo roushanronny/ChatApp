@@ -15,7 +15,7 @@ function Users() {
         style={{ maxHeight: "calc(84vh - 10vh)" }}
       >
         {allUsers.map((user, index) => (
-          <User key={index} user={user} />
+         <User key={index} user={user} />
         ))}
       </div>
     </div>

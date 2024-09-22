@@ -9,12 +9,14 @@ function useGetAllUsers() {
       setLoading(true);
       try {
         const token = Cookies.get("jwt");
-        const response = await axios.get("/api/user/allusers", {
+        const response = await axios.get("/api/user/getUserProfile", {
           credentials: "include",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+        //console.log(response);
+        //console.log("AAAA");
         setAllUsers(response.data);
         setLoading(false);
       } catch (error) {
