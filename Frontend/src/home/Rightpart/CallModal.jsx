@@ -441,6 +441,81 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
     }
   };
 
+  // Handle accepting incoming call
+  const handleAcceptCall = async () => {
+    if (!incomingOfferRef.current || !selectedConversation) return;
+    
+    console.log("✅ User accepted incoming call");
+    setIsIncomingCall(false);
+    
+    try {
+      // Get user media
+      const currentStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
+      setStream(currentStream);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = currentStream;
+        localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+      }
+
+      // Create peer connection
+      peerConnectionRef.current = createPeerConnection();
+      currentStream.getTracks().forEach(track => {
+        peerConnectionRef.current.addTrack(track, currentStream);
+      });
+
+      // Set remote description (offer)
+      await peerConnectionRef.current.setRemoteDescription(
+        new RTCSessionDescription(incomingOfferRef.current)
+      );
+      console.log("Remote description (offer) set");
+
+      // Create answer
+      const answer = await peerConnectionRef.current.createAnswer();
+      await peerConnectionRef.current.setLocalDescription(answer);
+      console.log("Answer created and local description set");
+
+      // Send answer back to caller
+      socket.emit("answerCall", {
+        to: selectedConversation._id,
+        signal: peerConnectionRef.current.localDescription,
+        from: authUser?.user?._id,
+      });
+      console.log("✅ Answer sent to caller:", selectedConversation._id);
+
+      // Mark as accepted
+      setCallAccepted(true);
+      callStartTimeRef.current = new Date();
+      
+      // Update call status to answered
+      if (callIdRef.current) {
+        await updateCallStatus("answered");
+      }
+      
+      toast.success("Call answered");
+    } catch (err) {
+      console.error("Error accepting call:", err);
+      toast.error("Error accepting call: " + err.message);
+    }
+  };
+
+  // Handle rejecting incoming call
+  const handleRejectCall = async () => {
+    console.log("❌ User rejected incoming call");
+    
+    // Update call status to missed
+    if (callIdRef.current) {
+      await updateCallStatus("missed");
+    }
+    
+    // Notify caller that call was rejected
+    if (socket && selectedConversation) {
+      socket.emit("endCall", { to: selectedConversation._id });
+    }
+    
+    // Close modal
+    handleEndCall();
+  };
+
   const handleEndCall = async () => {
     setCallEnded(true);
     
@@ -478,6 +553,8 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       setCallAccepted(false);
       setCallEnded(false);
       setStream(null);
+      setIsIncomingCall(false);
+      incomingOfferRef.current = null;
       callIdRef.current = null;
       callStartTimeRef.current = null;
     }, 1000);
