@@ -312,3 +312,167 @@ export const getStarredMessages = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Clear chat - Delete all messages in a conversation
+export const clearChat = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
+    
+    const conversation = await Conversation.findOne({
+      members: { $all: [senderId, receiverId] },
+    });
+    
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    // Delete all messages in this conversation
+    await Message.updateMany(
+      { _id: { $in: conversation.messages } },
+      { isDeleted: true, deletedAt: new Date() }
+    );
+    
+    // Clear messages array from conversation
+    conversation.messages = [];
+    await conversation.save();
+    
+    // Notify receiver
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("chatCleared", { conversationId: conversation._id });
+    }
+    
+    res.status(200).json({ message: "Chat cleared successfully" });
+  } catch (error) {
+    console.log("Error in clearChat", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Mute/Unmute notifications for a chat
+export const toggleMuteChat = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
+    const { mutedUntil } = req.body; // null for permanent, or Date for temporary
+    
+    const conversation = await Conversation.findOne({
+      members: { $all: [senderId, receiverId] },
+    });
+    
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    const existingMute = conversation.mutedBy.find(
+      m => m.userId.toString() === senderId.toString()
+    );
+    
+    if (existingMute) {
+      // Unmute - remove from mutedBy array
+      conversation.mutedBy = conversation.mutedBy.filter(
+        m => m.userId.toString() !== senderId.toString()
+      );
+    } else {
+      // Mute - add to mutedBy array
+      conversation.mutedBy.push({
+        userId: senderId,
+        mutedUntil: mutedUntil || null,
+      });
+    }
+    
+    await conversation.save();
+    
+    res.status(200).json({
+      message: existingMute ? "Chat unmuted successfully" : "Chat muted successfully",
+      isMuted: !existingMute,
+    });
+  } catch (error) {
+    console.log("Error in toggleMuteChat", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Export chat - Generate text file with all messages
+export const exportChat = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
+    
+    const conversation = await Conversation.findOne({
+      members: { $all: [senderId, receiverId] },
+    }).populate({
+      path: "messages",
+      populate: [
+        { path: "senderId", select: "fullname" },
+      ],
+    });
+    
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    const messages = conversation.messages.filter(msg => !msg.isDeleted);
+    
+    // Generate chat export text
+    let chatText = `WhatsApp Chat Export\n`;
+    chatText += `========================\n\n`;
+    chatText += `Conversation with: ${messages[0]?.receiverId?.fullname || "Unknown"}\n`;
+    chatText += `Exported on: ${new Date().toLocaleString()}\n\n`;
+    chatText += `Messages:\n`;
+    chatText += `========================\n\n`;
+    
+    messages.forEach(msg => {
+      const date = new Date(msg.createdAt).toLocaleString();
+      const senderName = msg.senderId?.fullname || "Unknown";
+      const messageContent = msg.messageType === "text" 
+        ? msg.message 
+        : `[${msg.messageType.toUpperCase()}] ${msg.message || "Media"}`;
+      
+      chatText += `${date} - ${senderName}:\n`;
+      chatText += `${messageContent}\n\n`;
+    });
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="chat-export-${Date.now()}.txt"`);
+    res.status(200).send(chatText);
+  } catch (error) {
+    console.log("Error in exportChat", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Delete chat - Delete the entire conversation
+export const deleteChat = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
+    
+    const conversation = await Conversation.findOne({
+      members: { $all: [senderId, receiverId] },
+    });
+    
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    // Delete all messages
+    await Message.deleteMany({ _id: { $in: conversation.messages } });
+    
+    // Delete conversation
+    await Conversation.findByIdAndDelete(conversation._id);
+    
+    // Notify receiver
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("chatDeleted", { conversationId: conversation._id });
+    }
+    
+    res.status(200).json({ message: "Chat deleted successfully" });
+  } catch (error) {
+    console.log("Error in deleteChat", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

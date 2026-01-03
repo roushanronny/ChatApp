@@ -16,6 +16,24 @@ const conversationSchema = new mongoose.Schema(
         default: [],
       },
     ],
+    mutedBy: [{
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: User,
+      },
+      mutedUntil: {
+        type: Date,
+        default: null, // null means permanently muted, or a date for temporary mute
+      },
+    }],
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+    archivedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: User,
+    },
   },
   { timestamps: true }
 );

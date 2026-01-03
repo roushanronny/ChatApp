@@ -7,6 +7,10 @@ import CallModal from "./CallModal";
 import ContactInfoModal from "../../components/ContactInfoModal";
 import toast from "react-hot-toast";
 import useGetMessage from "../../context/useGetMessage";
+import axios from "axios";
+import { getApiUrl } from "../../config/api.js";
+import { getToken } from "../../utils/getToken.js";
+import { useNavigate } from "react-router-dom";
 
 function Chatuser({ searchQuery, setSearchQuery }) {
   const { selectedConversation } = useConversation();
@@ -48,23 +52,104 @@ function Chatuser({ searchQuery, setSearchQuery }) {
     setShowCallModal(true);
   };
 
-  const handleMenuAction = (action) => {
+  const handleMenuAction = async (action) => {
     setShowMenu(false);
-    switch(action) {
-      case "clear":
-        toast.info("Clear chat feature coming soon!");
-        break;
-      case "delete":
-        toast.info("Delete chat feature coming soon!");
-        break;
-      case "mute":
-        toast.info("Mute notifications feature coming soon!");
-        break;
-      case "export":
-        toast.info("Export chat feature coming soon!");
-        break;
-      default:
-        break;
+    
+    if (!selectedConversation) return;
+    
+    try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Please login again");
+        return;
+      }
+      
+      switch(action) {
+        case "clear":
+          const clearConfirm = window.confirm("Are you sure you want to clear this chat? This will delete all messages.");
+          if (!clearConfirm) return;
+          
+          await axios.delete(
+            getApiUrl(`/api/message/clear/${selectedConversation._id}`),
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          
+          setMessage([]); // Clear messages from state
+          toast.success("Chat cleared successfully");
+          break;
+          
+        case "delete":
+          const deleteConfirm = window.confirm("Are you sure you want to delete this chat? This action cannot be undone.");
+          if (!deleteConfirm) return;
+          
+          await axios.delete(
+            getApiUrl(`/api/message/chat/${selectedConversation._id}`),
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          
+          setSelectedConversation(null); // Clear selected conversation
+          setMessage([]); // Clear messages
+          toast.success("Chat deleted successfully");
+          break;
+          
+        case "mute":
+          const muteResponse = await axios.put(
+            getApiUrl(`/api/message/mute/${selectedConversation._id}`),
+            { mutedUntil: null }, // Permanent mute
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          
+          setIsMuted(muteResponse.data.isMuted);
+          toast.success(muteResponse.data.isMuted ? "Chat muted" : "Chat unmuted");
+          break;
+          
+        case "export":
+          const exportResponse = await axios.get(
+            getApiUrl(`/api/message/export/${selectedConversation._id}`),
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              responseType: 'blob', // Important for file download
+            }
+          );
+          
+          // Create blob URL and trigger download
+          const blob = new Blob([exportResponse.data], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `chat-export-${selectedConversation.fullname || selectedConversation.name}-${Date.now()}.txt`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          toast.success("Chat exported successfully");
+          break;
+          
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error("Error in handleMenuAction:", error);
+      toast.error(error.response?.data?.error || "An error occurred");
     }
   };
 

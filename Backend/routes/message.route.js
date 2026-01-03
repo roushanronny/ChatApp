@@ -7,7 +7,11 @@ import {
   forwardMessage,
   toggleStar,
   deleteMessage,
-  getStarredMessages
+  getStarredMessages,
+  clearChat,
+  toggleMuteChat,
+  exportChat,
+  deleteChat
 } from "../controller/message.controller.js";
 import secureRoute from "../middleware/secureRoute.js";
 
@@ -20,5 +24,11 @@ router.post("/forward/:messageId", secureRoute, forwardMessage);
 router.put("/star/:messageId", secureRoute, toggleStar);
 router.delete("/delete/:messageId", secureRoute, deleteMessage);
 router.get("/starred", secureRoute, getStarredMessages);
+
+// Chat menu actions
+router.delete("/clear/:id", secureRoute, clearChat);
+router.put("/mute/:id", secureRoute, toggleMuteChat);
+router.get("/export/:id", secureRoute, exportChat);
+router.delete("/chat/:id", secureRoute, deleteChat);
 
 export default router;
