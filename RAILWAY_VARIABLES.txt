@@ -1,0 +1,54 @@
+================================================================================
+RAILWAY ENVIRONMENT VARIABLES - COPY PASTE करें
+================================================================================
+
+Railway Dashboard → Variables Tab → Add ये सभी variables:
+
+--------------------------------------------------------------------------------
+
+1. MONGODB_URI
+mongodb+srv://roushanydv2003_db_user:Ronny%400112@cluster0.jik2c4j.mongodb.net/chatapp?retryWrites=true&w=majority
+
+--------------------------------------------------------------------------------
+
+2. JWT_TOKEN
+ChatAppSecretKey2024!@#$%^&*Ronny0112
+
+--------------------------------------------------------------------------------
+
+3. FRONTEND_URL
+https://chat-app-two-bice-70.vercel.app
+
+--------------------------------------------------------------------------------
+
+4. NODE_ENV
+production
+
+--------------------------------------------------------------------------------
+
+================================================================================
+STEP-BY-STEP:
+================================================================================
+
+1. Railway.app पर login करें
+2. अपना project (chatapp-production) open करें
+3. Left sidebar में "Variables" tab click करें
+4. "New Variable" button click करें
+5. ऊपर दिए गए variables एक-एक करके add करें:
+   - Name: MONGODB_URI
+   - Value: mongodb+srv://roushanydv2003_db_user:Ronny%400112@cluster0.jik2c4j.mongodb.net/chatapp?retryWrites=true&w=majority
+   
+   - Name: JWT_TOKEN
+   - Value: ChatAppSecretKey2024!@#$%^&*Ronny0112
+   
+   - Name: FRONTEND_URL
+   - Value: http://localhost:3001
+   
+   - Name: NODE_ENV
+   - Value: production
+
+6. सभी variables add करने के बाद Railway automatically redeploy होगा
+7. Deployment logs check करें - "Connected to MongoDB successfully" दिखना चाहिए
+
+================================================================================
+
