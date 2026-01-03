@@ -754,28 +754,56 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         <div className="flex-1 flex flex-col items-center justify-center space-y-4">
           {currentCallType === "video" && (
             <div className="relative w-full h-full bg-[#111B21] rounded-lg overflow-hidden min-h-[400px]">
-              {stream ? (
+              {/* When call is accepted: Show remote video full screen if available, otherwise local */}
+              {callAccepted && !callEnded ? (
                 <>
-                  {/* When call is accepted: Show remote video full screen */}
-                  {callAccepted && (
-                    <video
-                      ref={remoteVideoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                    onLoadedMetadata={() => {
+                      console.log("Remote video metadata loaded");
+                      if (remoteVideoRef.current) {
+                        remoteVideoRef.current.play().catch(err => console.error("Error playing remote video:", err));
+                      }
+                    }}
+                  />
                   
-                  {/* When calling (not accepted yet): Show local video full screen */}
-                  {!callAccepted && !callEnded && (
+                  {/* Local video as PIP */}
+                  <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45] z-10">
                     <video
+                      key={`local-pip-${streamRef.current?.id || stream?.id || Date.now()}`}
                       ref={localVideoRef}
                       autoPlay
                       playsInline
                       muted
                       className="w-full h-full object-cover"
+                      onLoadedMetadata={() => {
+                        console.log("Local PIP video metadata loaded");
+                        if (localVideoRef.current) {
+                          localVideoRef.current.play().catch(err => console.error("Error playing local PIP:", err));
+                        }
+                      }}
                     />
-                  )}
+                  </div>
+                </>
+              ) : !callEnded ? (
+                /* When calling (not accepted yet): Show local video full screen */
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                  onLoadedMetadata={() => {
+                    console.log("Local video metadata loaded (pre-accept)");
+                    if (localVideoRef.current) {
+                      localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+                    }
+                  }}
+                />
+              ) : null}
                   
                   {/* Contact info overlay when calling */}
                   {!callAccepted && !callEnded && (
