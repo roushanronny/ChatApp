@@ -13,7 +13,7 @@ import { getToken } from "../../utils/getToken.js";
 import { useNavigate } from "react-router-dom";
 
 function Chatuser({ searchQuery, setSearchQuery }) {
-  const { selectedConversation } = useConversation();
+  const { selectedConversation, setSelectedConversation, setMessage } = useConversation();
   const { onlineUsers } = useSocketContext();
   const { messages } = useGetMessage();
   const [showCallModal, setShowCallModal] = useState(false);
@@ -21,6 +21,7 @@ function Chatuser({ searchQuery, setSearchQuery }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [callType, setCallType] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
   const menuRef = useRef(null);
   const searchRef = useRef(null);
 
