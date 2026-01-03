@@ -397,7 +397,49 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       });
 
       socket.on("callEnded", () => {
-        handleEndCall();
+        console.log("📞 Call ended by remote party");
+        // Call ended by other party - end call immediately
+        setCallEnded(true);
+        
+        // Stop local stream
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+        
+        // Close peer connection
+        if (peerConnectionRef.current) {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        }
+        
+        // Clear video refs
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = null;
+        }
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+        }
+        
+        // Update call status
+        if (callIdRef.current) {
+          updateCallStatus(callAccepted ? "answered" : "missed").catch(err => 
+            console.error("Error updating call status:", err)
+          );
+        }
+        
+        toast.info("Call ended by other party");
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+          onClose();
+          setCallAccepted(false);
+          setCallEnded(false);
+          setStream(null);
+          setIsIncomingCall(false);
+          incomingOfferRef.current = null;
+          callIdRef.current = null;
+          callStartTimeRef.current = null;
+        }, 1000);
       });
     }
 
