@@ -233,7 +233,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       
       // If this is an incoming call (receiver), handle it differently
       if (incomingCall && incomingCall.type === "offer") {
-        console.log("Handling incoming call offer");
+        console.log("Handling incoming call offer - answering call");
+        
+        // Update call type
+        setCurrentCallType(callType || incomingCall.callType || "video");
         
         // Save call to history as answered
         const saveCall = async () => {
@@ -243,7 +246,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               getApiUrl("/api/call/create"),
               {
                 receiverId: selectedConversation._id,
-                callType: callType || "video",
+                callType: callType || incomingCall.callType || "video",
                 status: "answered",
               },
               {
@@ -255,12 +258,14 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             );
             callIdRef.current = response.data.call._id;
             callStartTimeRef.current = new Date();
+            console.log("Call saved to history:", response.data);
           } catch (error) {
             console.error("Error saving call:", error);
           }
         };
         
         // Get user media and answer the call
+        const incomingCallType = callType || incomingCall.callType || "video";
         navigator.mediaDevices
           .getUserMedia(getMediaConstraints())
           .then(async (currentStream) => {
@@ -285,7 +290,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             // Create answer
             const answer = await peerConnectionRef.current.createAnswer();
             await peerConnectionRef.current.setLocalDescription(answer);
-            console.log("Answer created");
+            console.log("Answer created and local description set");
 
             // Send answer back to caller
             socket.emit("answerCall", {
@@ -293,13 +298,15 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               signal: peerConnectionRef.current.localDescription,
               from: authUser?.user?._id,
             });
-            console.log("Answer sent to caller");
+            console.log("Answer sent to caller:", selectedConversation._id);
 
             // Mark as accepted
             setCallAccepted(true);
             
             // Save call
             await saveCall();
+            
+            toast.success("Call answered");
           })
           .catch((err) => {
             console.error("Error accessing media devices:", err);
