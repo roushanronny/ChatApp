@@ -329,9 +329,19 @@ function Typesend() {
       mediaRecorderRef.current.onstop = async () => {
         console.log("Recording stopped, chunks:", audioChunksRef.current.length);
         
+        // Clear recording interval
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+        
         if (audioChunksRef.current.length === 0) {
           toast.error("No audio recorded");
-          stream.getTracks().forEach(track => track.stop());
+          setIsRecording(false);
+          setRecordingDuration(0);
           return;
         }
 
@@ -340,39 +350,26 @@ function Typesend() {
           console.log("Audio blob created:", audioBlob.size, "bytes");
           
           if (audioBlob.size < 100) {
-            toast.error("Recording too short");
-            stream.getTracks().forEach(track => track.stop());
+            toast.error("Recording too short. Please record again.");
+            setIsRecording(false);
+            setRecordingDuration(0);
             return;
           }
 
-          const reader = new FileReader();
-          reader.onloadend = async () => {
-            try {
-              console.log("Sending audio message, base64 length:", reader.result?.length);
-              if (!selectedConversation) {
-                toast.error("Please select a conversation");
-                return;
-              }
-              await sendMessages("", "audio", reader.result);
-              console.log("Voice message sent successfully");
-              toast.success("Voice message sent");
-            } catch (error) {
-              console.error("Error sending audio:", error);
-              const errorMsg = error.response?.data?.error || error.message || "Failed to send voice message";
-              toast.error(errorMsg);
-            }
-          };
-          reader.onerror = (error) => {
-            console.error("Error reading audio blob:", error);
-            toast.error("Error processing audio");
-          };
-          reader.readAsDataURL(audioBlob);
+          // Create URL for preview/playback
+          const audioUrl = URL.createObjectURL(audioBlob);
+          setRecordedAudioBlob(audioBlob);
+          setRecordedAudioUrl(audioUrl);
+          setShowRecordingControls(true);
+          setIsRecording(false);
+          
+          console.log("Recording ready to send");
         } catch (error) {
           console.error("Error creating audio blob:", error);
           toast.error("Error processing audio");
+          setIsRecording(false);
+          setRecordingDuration(0);
         }
-        
-        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start(100); // Collect data every 100ms
@@ -399,21 +396,48 @@ function Typesend() {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      try {
-        if (mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          console.log("Recording stopped by user");
-        }
-        // Don't set isRecording to false here - let onstop handler do it
-      } catch (error) {
-        console.error("Error stopping recording:", error);
+    if (!mediaRecorderRef.current || !isRecording) {
+      return;
+    }
+
+    try {
+      console.log("Stop button clicked, stopping recording...");
+      
+      // Clear interval first
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      // Stop the recorder if it's recording
+      if (mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+        console.log("Recording stopped by user - MediaRecorder.stop() called");
+      } else if (mediaRecorderRef.current.state === "inactive") {
+        // Already stopped, just clean up
+        console.log("Recording already stopped, cleaning up...");
         setIsRecording(false);
         setRecordingDuration(0);
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current);
-          recordingIntervalRef.current = null;
+        
+        // Stop any tracks
+        if (mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
+      }
+      
+      // onstop handler will take care of the rest
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      setIsRecording(false);
+      setRecordingDuration(0);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      // Try to stop tracks manually if recorder fails
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       }
     }
   };
