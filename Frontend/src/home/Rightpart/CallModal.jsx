@@ -611,46 +611,55 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
     try {
       // Get user media
       const currentStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
-      console.log("✅ Got user media, tracks:", currentStream.getTracks().length);
+      const tracks = currentStream.getTracks();
+      console.log("✅ Got user media, tracks:", tracks.map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled })));
+      
+      // Ensure all tracks are enabled
+      tracks.forEach(track => {
+        track.enabled = true;
+        console.log(`Track ${track.kind} enabled:`, track.enabled);
+      });
+      
+      // Set stream in state and ref
       setStream(currentStream);
-      streamRef.current = currentStream; // Store in ref for event handlers
+      streamRef.current = currentStream;
       
       // Update local video element immediately
       if (localVideoRef.current) {
         console.log("Setting local video stream");
         localVideoRef.current.srcObject = currentStream;
+        localVideoRef.current.muted = true; // Local video should be muted
         localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+        console.log("✅ Local video element updated");
       } else {
         console.warn("localVideoRef.current is null");
       }
 
-      // Create peer connection FIRST (without tracks)
+      // Create peer connection
       peerConnectionRef.current = createPeerConnection();
       console.log("Created peer connection for incoming call");
       
-      // Set stream in state BEFORE adding tracks (so createPeerConnection can access it)
-      setStream(currentStream);
-      streamRef.current = currentStream;
-      
-      // Add tracks to peer connection AFTER creating it
-      currentStream.getTracks().forEach(track => {
+      // Add tracks to peer connection
+      tracks.forEach(track => {
         console.log("Adding track to peer connection:", track.kind, track.id, "enabled:", track.enabled);
-        track.enabled = true; // Ensure track is enabled
         peerConnectionRef.current.addTrack(track, currentStream);
       });
       
-      console.log("✅ All tracks added to peer connection:", currentStream.getTracks().length);
+      console.log("✅ All tracks added to peer connection:", tracks.length);
 
-      // Set remote description (offer)
+      // Set remote description (offer) - MUST be done before creating answer
       await peerConnectionRef.current.setRemoteDescription(
         new RTCSessionDescription(incomingOfferRef.current)
       );
-      console.log("Remote description (offer) set");
+      console.log("✅ Remote description (offer) set");
 
-      // Create answer
-      const answer = await peerConnectionRef.current.createAnswer();
+      // Create answer with proper constraints
+      const answer = await peerConnectionRef.current.createAnswer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: currentCallType === "video"
+      });
       await peerConnectionRef.current.setLocalDescription(answer);
-      console.log("Answer created and local description set");
+      console.log("✅ Answer created and local description set");
 
       // Send answer back to caller
       socket.emit("answerCall", {
