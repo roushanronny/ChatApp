@@ -344,11 +344,17 @@ function Typesend() {
           reader.onloadend = async () => {
             try {
               console.log("Sending audio message, base64 length:", reader.result?.length);
+              if (!selectedConversation) {
+                toast.error("Please select a conversation");
+                return;
+              }
               await sendMessages("", "audio", reader.result);
+              console.log("Voice message sent successfully");
               toast.success("Voice message sent");
             } catch (error) {
               console.error("Error sending audio:", error);
-              toast.error("Failed to send voice message: " + (error.response?.data?.error || error.message));
+              const errorMsg = error.response?.data?.error || error.message || "Failed to send voice message";
+              toast.error(errorMsg);
             }
           };
           reader.onerror = (error) => {
