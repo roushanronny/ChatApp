@@ -563,25 +563,30 @@ function Typesend() {
             </button>
           </div>
           
-          {(message || selectedFile || filePreview || isRecording) ? (
+          {(message || selectedFile || filePreview) && !isRecording ? (
             <button
               type="submit"
-              disabled={loading || isRecording}
+              disabled={loading}
               className="p-3 text-[#8696A0] hover:bg-[#313D45] rounded-full transition disabled:opacity-50"
-              title={isRecording ? "Recording..." : "Send"}
+              title="Send"
             >
-              {isRecording ? (
-                <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <IoSend className="text-xl" />
-              )}
+              <IoSend className="text-xl" />
+            </button>
+          ) : isRecording ? (
+            <button
+              type="button"
+              disabled
+              className="p-3 text-red-500 rounded-full transition"
+              title="Recording..."
+            >
+              <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
             </button>
           ) : (
             <button
               type="button"
               onMouseDown={handleMicMouseDown}
               onMouseUp={handleMicMouseUp}
-              onMouseLeave={handleMicMouseUp}
+              onMouseLeave={handleMicMouseLeave}
               onTouchStart={handleMicMouseDown}
               onTouchEnd={handleMicMouseUp}
               className={`p-3 rounded-full transition ${

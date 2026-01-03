@@ -344,14 +344,33 @@ function Message({ message }) {
       const imageUrl = message.mediaUrl || message.content || "";
       if (!imageUrl) return <p className="text-[#111B21]">Image not available</p>;
       
+      const handleImageClick = () => {
+        // For base64 images, create a new window with the image
+        if (imageUrl.startsWith('data:')) {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <html>
+                <head><title>Image</title></head>
+                <body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#000;">
+                  <img src="${imageUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />
+                </body>
+              </html>
+            `);
+          }
+        } else {
+          window.open(imageUrl, '_blank');
+        }
+      };
+      
       return (
         <div>
           {renderReplyPreview()}
           <img 
             src={imageUrl} 
             alt="Sent" 
-            className="max-w-xs rounded-lg mb-1 cursor-pointer"
-            onClick={() => window.open(imageUrl, '_blank')}
+            className="max-w-xs rounded-lg mb-1 cursor-pointer hover:opacity-90 transition"
+            onClick={handleImageClick}
             onError={(e) => {
               e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23ddd" width="200" height="200"/><text fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em">Image failed to load</text></svg>';
             }}
@@ -374,8 +393,20 @@ function Message({ message }) {
             src={videoUrl} 
             controls 
             className="max-w-xs rounded-lg mb-1"
+            preload="metadata"
             onError={(e) => {
               console.error("Error loading video:", e);
+              e.target.style.display = 'none';
+              const errorDiv = document.createElement('div');
+              errorDiv.className = 'text-[#111B21] p-2';
+              errorDiv.textContent = 'Video failed to load';
+              e.target.parentNode.appendChild(errorDiv);
+            }}
+            onLoadStart={() => {
+              console.log("Video loading started");
+            }}
+            onLoadedData={() => {
+              console.log("Video loaded successfully");
             }}
           />
           {message.message && (
@@ -417,24 +448,44 @@ function Message({ message }) {
       const fileUrl = message.mediaUrl || message.content || "";
       const fileName = message.message || "File";
       
+      const handleFileClick = () => {
+        if (!fileUrl) {
+          toast.error("File URL not available");
+          return;
+        }
+        
+        // For base64 files, create download
+        if (fileUrl.startsWith('data:')) {
+          try {
+            const link = document.createElement('a');
+            link.href = fileUrl;
+            link.download = fileName || 'file';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } catch (error) {
+            console.error("Error downloading file:", error);
+            toast.error("Error downloading file");
+          }
+        } else {
+          // For URL files, open in new tab or download
+          window.open(fileUrl, '_blank');
+        }
+      };
+      
       return (
         <div>
           {renderReplyPreview()}
-          <div className="flex items-center space-x-3 bg-[#F0F2F5] px-3 py-2 rounded-lg mb-1">
+          <div 
+            className="flex items-center space-x-3 bg-[#F0F2F5] px-3 py-2 rounded-lg mb-1 cursor-pointer hover:bg-[#E4E6EB] transition"
+            onClick={handleFileClick}
+          >
             <svg viewBox="0 0 24 24" width="24" height="24" fill="#667781">
               <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
             </svg>
             <div className="flex-1 min-w-0">
               <p className="text-[#111B21] text-sm font-medium truncate">{fileName}</p>
-              {fileUrl && (
-                <a 
-                  href={fileUrl} 
-                  download
-                  className="text-[#00A884] text-xs hover:underline"
-                >
-                  Download
-                </a>
-              )}
+              <p className="text-[#00A884] text-xs">Click to download</p>
             </div>
           </div>
         </div>
