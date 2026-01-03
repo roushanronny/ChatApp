@@ -198,17 +198,33 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
-      console.log("📹 Remote track received:", event.track.kind, event.streams.length);
+      console.log("📹🎤 Remote track received:", event.track.kind, "enabled:", event.track.enabled, "streams:", event.streams.length);
+      
       if (event.streams && event.streams[0]) {
         const remoteStream = event.streams[0];
+        
+        // Log all tracks in the remote stream
+        const remoteTracks = remoteStream.getTracks();
+        console.log("Remote stream tracks:", remoteTracks.map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled })));
+        
+        // Set remote video element
         if (remoteVideoRef.current) {
-          console.log("Setting remote video stream");
+          console.log("Setting remote video stream (audio + video)");
           remoteVideoRef.current.srcObject = remoteStream;
+          // Ensure audio is NOT muted for remote video
+          remoteVideoRef.current.muted = false;
+          remoteVideoRef.current.volume = 1.0;
           remoteVideoRef.current.play().catch(err => {
             console.error("Error playing remote video:", err);
           });
         } else {
           console.warn("remoteVideoRef.current is null");
+        }
+        
+        // Also handle audio-only case (for audio calls)
+        if (event.track.kind === 'audio' && !remoteVideoRef.current) {
+          // For audio calls, we might need an audio element
+          console.log("Audio track received for audio call");
         }
       }
     };
@@ -325,18 +341,34 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       navigator.mediaDevices
         .getUserMedia(getMediaConstraints())
         .then((currentStream) => {
+          console.log("✅ Got user media, tracks:", currentStream.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled })));
+          
+          // Ensure all tracks are enabled
+          currentStream.getTracks().forEach(track => {
+            track.enabled = true;
+            console.log(`Track ${track.kind} enabled:`, track.enabled);
+          });
+          
           setStream(currentStream);
           streamRef.current = currentStream; // Store in ref for event handlers
+          
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = currentStream;
-            localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+            localVideoRef.current.muted = true; // Mute local video (we don't want echo)
+            localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+            console.log("✅ Local video element updated");
           }
 
           // Create peer connection
           peerConnectionRef.current = createPeerConnection();
+          
+          // Add tracks to peer connection
           currentStream.getTracks().forEach(track => {
+            console.log("Adding track to peer connection:", track.kind, track.id);
             peerConnectionRef.current.addTrack(track, currentStream);
           });
+          
+          console.log("✅ All tracks added to peer connection for outgoing call");
 
           // Create and send offer
           peerConnectionRef.current
@@ -592,15 +624,22 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         console.warn("localVideoRef.current is null");
       }
 
-      // Create peer connection
+      // Create peer connection FIRST (without tracks)
       peerConnectionRef.current = createPeerConnection();
       console.log("Created peer connection for incoming call");
       
-      // Add tracks to peer connection
+      // Set stream in state BEFORE adding tracks (so createPeerConnection can access it)
+      setStream(currentStream);
+      streamRef.current = currentStream;
+      
+      // Add tracks to peer connection AFTER creating it
       currentStream.getTracks().forEach(track => {
-        console.log("Adding track to peer connection:", track.kind, track.id);
+        console.log("Adding track to peer connection:", track.kind, track.id, "enabled:", track.enabled);
+        track.enabled = true; // Ensure track is enabled
         peerConnectionRef.current.addTrack(track, currentStream);
       });
+      
+      console.log("✅ All tracks added to peer connection:", currentStream.getTracks().length);
 
       // Set remote description (offer)
       await peerConnectionRef.current.setRemoteDescription(
