@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaPhone, FaVideo, FaTimes, FaPhoneSlash } from "react-icons/fa";
 import { useSocketContext } from "../../context/SocketContext.jsx";
+import axios from "axios";
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
 
 function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   const { socket } = useSocketContext();
@@ -10,10 +13,39 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const connectionRef = useRef(null);
+  const callStartTimeRef = useRef(null);
+  const callIdRef = useRef(null);
   const authUser = JSON.parse(localStorage.getItem("ChatApp"));
 
   useEffect(() => {
     if (isOpen && socket && selectedConversation) {
+      // Save call to history
+      const saveCall = async () => {
+        try {
+          const token = Cookies.get("jwt");
+          const response = await axios.post(
+            "/api/call/create",
+            {
+              receiverId: selectedConversation._id,
+              callType,
+              status: "missed", // Will update when answered
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          callIdRef.current = response.data.call._id;
+          callStartTimeRef.current = new Date();
+          console.log("Call saved to history:", response.data);
+        } catch (error) {
+          console.error("Error saving call:", error);
+        }
+      };
+      
+      saveCall();
+      
       // Initialize call
       navigator.mediaDevices
         .getUserMedia({ 
@@ -28,11 +60,16 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         })
         .catch((err) => {
           console.error("Error accessing media devices:", err);
+          toast.error("Camera/Microphone access denied");
         });
 
       // Listen for call acceptance
       socket.on("callAccepted", ({ signal }) => {
         setCallAccepted(true);
+        // Update call status to answered
+        if (callIdRef.current) {
+          updateCallStatus("answered");
+        }
         // Handle peer connection (simplified - would need WebRTC implementation)
       });
 
@@ -48,19 +85,51 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
     };
   }, [isOpen, socket, selectedConversation, callType]);
 
-  const handleEndCall = () => {
+  const updateCallStatus = async (status) => {
+    if (!callIdRef.current) return;
+    
+    try {
+      const token = Cookies.get("jwt");
+      const duration = callStartTimeRef.current 
+        ? Math.floor((new Date() - callStartTimeRef.current) / 1000)
+        : 0;
+      
+      await axios.put(
+        `/api/call/update/${callIdRef.current}`,
+        { status, duration },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error updating call status:", error);
+    }
+  };
+
+  const handleEndCall = async () => {
     setCallEnded(true);
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
+    
+    // Update call status
+    if (callIdRef.current) {
+      await updateCallStatus(callAccepted ? "answered" : "missed");
+    }
+    
     if (socket && selectedConversation) {
       socket.emit("endCall", { to: selectedConversation._id });
     }
+    
     setTimeout(() => {
       onClose();
       setCallAccepted(false);
       setCallEnded(false);
       setStream(null);
+      callIdRef.current = null;
+      callStartTimeRef.current = null;
     }, 1000);
   };
 
@@ -80,15 +149,18 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
 
         <div className="flex-1 flex flex-col items-center justify-center space-y-4">
           {callType === "video" && (
-            <div className="relative w-full h-full bg-[#111B21] rounded-lg overflow-hidden">
-              {stream && (
+            <div className="relative w-full h-full bg-[#111B21] rounded-lg overflow-hidden min-h-[400px]">
+              {stream ? (
                 <>
+                  {/* Remote video (main) */}
                   <video
                     ref={remoteVideoRef}
                     autoPlay
                     playsInline
                     className="w-full h-full object-cover"
+                    style={{ display: callAccepted ? 'block' : 'none' }}
                   />
+                  {/* Local video (picture-in-picture) */}
                   <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45]">
                     <video
                       ref={localVideoRef}
@@ -98,15 +170,37 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                       className="w-full h-full object-cover"
                     />
                   </div>
+                  {/* Waiting for call acceptance */}
+                  {!callAccepted && !callEnded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#111B21] bg-opacity-90">
+                      <div className="text-center">
+                        <div className="w-24 h-24 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
+                          {selectedConversation?.profilePicture ? (
+                            <img 
+                              src={selectedConversation.profilePicture} 
+                              alt={selectedConversation?.fullname || selectedConversation?.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl text-[#8696A0]">
+                              {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-white text-lg">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                        <p className="text-[#8696A0] mt-2">Calling...</p>
+                      </div>
+                    </div>
+                  )}
                 </>
-              )}
-              {!stream && (
+              ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-24 h-24 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
                       <FaVideo className="text-3xl text-[#8696A0]" />
                     </div>
                     <p className="text-white text-lg">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                    <p className="text-[#8696A0] mt-2">Connecting...</p>
                   </div>
                 </div>
               )}

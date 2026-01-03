@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import Search from "./Search";
 import Users from "./Users";
+import { useView } from "../../context/ViewContext";
+import { FaBox } from "react-icons/fa";
 
 function Left() {
   const [activeTab, setActiveTab] = useState("all");
+  const { setActiveView } = useView();
   
   return (
     <div className="w-[30%] bg-[#111B21] text-gray-300 flex flex-col h-screen border-r border-[#313D45]">
@@ -55,6 +58,16 @@ function Left() {
       </div>
       <div className="flex-1 overflow-y-auto">
         <Users activeTab={activeTab} />
+      </div>
+      {/* Archived Button */}
+      <div className="px-4 py-2 border-t border-[#313D45]">
+        <button
+          onClick={() => setActiveView("archived")}
+          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-[#2A3942] rounded-lg transition text-[#00A884]"
+        >
+          <FaBox className="text-lg" />
+          <span className="text-sm font-medium">Archived</span>
+        </button>
       </div>
     </div>
   );

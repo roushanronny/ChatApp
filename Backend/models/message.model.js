@@ -18,7 +18,7 @@ const messageSchema = new mongoose.Schema(
     },
     messageType: {
       type: String,
-      enum: ["text", "image", "video", "audio"],
+      enum: ["text", "image", "video", "audio", "file"],
       default: "text",
     },
     mediaUrl: {
@@ -34,6 +34,32 @@ const messageSchema = new mongoose.Schema(
       default: false,
     },
     seenAt: {
+      type: Date,
+    },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "message",
+      default: null,
+    },
+    reactions: [{
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      emoji: {
+        type: String,
+        default: "❤️",
+      },
+    }],
+    isStarred: {
+      type: Boolean,
+      default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
       type: Date,
     },
   },

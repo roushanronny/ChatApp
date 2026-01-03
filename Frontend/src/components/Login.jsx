@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthProvider";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 
 function Login() {
   const [authUser, setAuthUser] = useAuth();
@@ -25,13 +26,20 @@ function Login() {
       .then((response) => {
         if (response.data) {
           toast.success("Login successful");
+          // Save token to localStorage and cookie
+          if (response.data.token) {
+            Cookies.set("jwt", response.data.token, { expires: 10 }); // 10 days
+          }
+          localStorage.setItem("ChatApp", JSON.stringify(response.data));
+          setAuthUser(response.data);
         }
-        localStorage.setItem("ChatApp", JSON.stringify(response.data));
-        setAuthUser(response.data);
       })
       .catch((error) => {
         if (error.response) {
-          toast.error("Error: " + error.response.data.message);
+          const errorMsg = error.response.data.error || error.response.data.message || "Login failed";
+          toast.error("Error: " + errorMsg);
+        } else {
+          toast.error("Network error. Please try again.");
         }
       });
   };

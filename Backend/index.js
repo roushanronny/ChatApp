@@ -5,12 +5,14 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRoute from "./routes/user.route.js";
 import messageRoute from "./routes/message.route.js";
+import callRoute from "./routes/call.route.js";
 import { app, server } from "./SocketIO/server.js";
 
 dotenv.config();
 
 // middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase limit for base64 images/videos
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(cors());
 
@@ -32,6 +34,7 @@ mongoose.connect(URI)
 //routes
 app.use("/api/user", userRoute);
 app.use("/api/message", messageRoute);
+app.use("/api/call", callRoute);
 
 server.listen(PORT, () => {
     console.log(`Server is Running on port ${PORT}`);

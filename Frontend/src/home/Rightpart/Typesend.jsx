@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
-import { FaPaperclip, FaSmile, FaMicrophone } from "react-icons/fa";
+import { FaPaperclip, FaSmile, FaMicrophone, FaTimes } from "react-icons/fa";
 import useSendMessage from "../../context/useSendMessage.js";
 import { useSocketContext } from "../../context/SocketContext.jsx";
 import useConversation from "../../statemanage/useConversation.js";
@@ -15,6 +15,7 @@ function Typesend() {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
   const { loading, sendMessages } = useSendMessage();
   const { socket } = useSocketContext();
   const { selectedConversation } = useConversation();
@@ -25,6 +26,26 @@ function Typesend() {
   const attachmentMenuRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Listen for reply message event
+  useEffect(() => {
+    const handleSetReply = (event) => {
+      setReplyTo(event.detail);
+      // Focus on input field
+      setTimeout(() => {
+        const input = document.querySelector('input[placeholder="Type a message"]');
+        if (input) input.focus();
+      }, 100);
+    };
+
+    window.addEventListener('setReplyMessage', handleSetReply);
+    return () => window.removeEventListener('setReplyMessage', handleSetReply);
+  }, []);
+
+  // Clear reply when conversation changes
+  useEffect(() => {
+    setReplyTo(null);
+  }, [selectedConversation?._id]);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -70,12 +91,13 @@ function Typesend() {
   };
 
   const handleAttachmentSelect = (action) => {
+    setShowAttachmentMenu(false); // Close menu first
     switch (action) {
       case "file":
-        generalFileInputRef.current?.click();
+        setTimeout(() => generalFileInputRef.current?.click(), 100);
         break;
       case "media":
-        mediaInputRef.current?.click();
+        setTimeout(() => mediaInputRef.current?.click(), 100);
         break;
       case "contact":
         toast.info("Contact sharing feature coming soon!");
@@ -107,42 +129,42 @@ function Typesend() {
         setFilePreview(reader.result);
       };
       reader.readAsDataURL(file);
-    } else if (type === "file") {
-      toast.success(`File selected: ${file.name}`);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!message && !selectedFile && !isRecording) return;
+    if (!message && !selectedFile && !filePreview && !isRecording) {
+      return;
+    }
 
     try {
-      if (selectedFile) {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            const base64String = reader.result;
-            await sendMessages("", fileType, base64String);
-            setSelectedFile(null);
-            setFilePreview(null);
-            setFileType("text");
-            if (fileInputRef.current) fileInputRef.current.value = "";
-            if (mediaInputRef.current) mediaInputRef.current.value = "";
-            if (generalFileInputRef.current) generalFileInputRef.current.value = "";
-          } catch (error) {
-            console.error("Error sending file:", error);
-            toast.error("Failed to send file");
-          }
-        };
-        reader.onerror = () => {
-          console.error("Error reading file");
-          toast.error("Error reading file");
-        };
-        reader.readAsDataURL(selectedFile);
-      } else {
-        await sendMessages(message, "text", "");
+      if (selectedFile || filePreview) {
+        let base64ToSend = filePreview;
+        
+        // If no preview but file is selected, read it
+        if (!base64ToSend && selectedFile) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            base64ToSend = reader.result;
+            sendFileMessage(base64ToSend);
+          };
+          reader.onerror = () => {
+            console.error("Error reading file");
+          };
+          reader.readAsDataURL(selectedFile);
+          return; // Return early, will continue in reader.onloadend
+        }
+        
+        // Send if we have the data
+        if (base64ToSend) {
+          await sendFileMessage(base64ToSend);
+        }
+      } else if (message.trim()) {
+        await sendMessages(message, "text", "", replyTo?._id);
         setMessage("");
+        setReplyTo(null); // Clear reply after sending
       }
       
       if (socket && selectedConversation) {
@@ -153,7 +175,26 @@ function Typesend() {
       }
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      toast.error("Failed to send message");
+    }
+  };
+
+  const sendFileMessage = async (base64Data) => {
+    try {
+      console.log("Sending file:", fileType, "Length:", base64Data?.length);
+      await sendMessages("", fileType, base64Data, replyTo?._id);
+      
+      // Reset file state
+      setSelectedFile(null);
+      setFilePreview(null);
+      setFileType("text");
+      setReplyTo(null); // Clear reply after sending
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (mediaInputRef.current) mediaInputRef.current.value = "";
+      if (generalFileInputRef.current) generalFileInputRef.current.value = "";
+      
+      // File sent successfully - no toast needed
+    } catch (error) {
+      console.error("Error sending file:", error);
     }
   };
 
@@ -185,10 +226,9 @@ function Typesend() {
         reader.onloadend = async () => {
           try {
             await sendMessages("", "audio", reader.result);
-            toast.success("Voice message sent");
+            // Voice message sent successfully
           } catch (error) {
             console.error("Error sending audio:", error);
-            toast.error("Failed to send voice message");
           }
         };
         reader.readAsDataURL(audioBlob);
@@ -199,7 +239,6 @@ function Typesend() {
       setIsRecording(true);
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      toast.error("Microphone access denied");
     }
   };
 
@@ -234,8 +273,34 @@ function Typesend() {
   // Common emojis
   const commonEmojis = ["😀", "😂", "😍", "😊", "😎", "😭", "❤️", "👍", "👎", "🎉", "🔥", "💯"];
 
+  const removeReply = () => {
+    setReplyTo(null);
+  };
+
   return (
     <div className="bg-[#202C33] border-t border-[#313D45] relative">
+      {replyTo && (
+        <div className="bg-[#2A3942] px-4 py-2 mx-3 mb-2 rounded-lg border-l-4 border-[#00A884] flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[#00A884] text-xs font-medium mb-0.5">
+              Replying to {replyTo.senderId?.fullname || "message"}
+            </div>
+            <div className="text-[#8696A0] text-xs truncate">
+              {replyTo.messageType === "image" ? "📷 Image" : 
+               replyTo.messageType === "video" ? "🎥 Video" :
+               replyTo.messageType === "audio" ? "🎤 Audio" :
+               replyTo.message || "Message"}
+            </div>
+          </div>
+          <button
+            onClick={removeReply}
+            className="ml-2 text-[#8696A0] hover:text-white transition"
+          >
+            <FaTimes />
+          </button>
+        </div>
+      )}
+
       {filePreview && (
         <div className="relative bg-[#202C33] p-3 mx-3 mb-2 rounded-lg border border-[#313D45]">
           <button
@@ -325,7 +390,7 @@ function Typesend() {
             </button>
           </div>
           
-          {message || selectedFile ? (
+          {(message || selectedFile || filePreview) ? (
             <button
               type="submit"
               disabled={loading}

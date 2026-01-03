@@ -61,43 +61,80 @@ function User({ user }) {
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result;
-        setProfilePicture(base64String);
-        
-        if (isCurrentUser) {
-          try {
-            const token = Cookies.get("jwt");
-            await axios.put(
-              "/api/user/updateProfilePicture",
-              { profilePicture: base64String },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-                credentials: "include",
-              }
-            );
-            // Update local storage
-            try {
-              const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
-              if (chatApp?.user) {
-                chatApp.user.profilePicture = base64String;
-                localStorage.setItem("ChatApp", JSON.stringify(chatApp));
-              }
-            } catch (error) {
-              console.error("Error updating local storage:", error);
-            }
-            setShowProfileModal(false);
-          } catch (error) {
-            console.error("Error updating profile picture:", error);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
     }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      
+      if (isCurrentUser) {
+        try {
+          const token = Cookies.get("jwt");
+          if (!token) {
+            toast.error("Please login again");
+            return;
+          }
+          
+          console.log("Updating profile picture...");
+          const response = await axios.put(
+            "/api/user/updateProfilePicture",
+            { profilePicture: base64String },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              credentials: "include",
+            }
+          );
+          
+          console.log("Profile picture updated:", response.data);
+          
+          // Update local storage
+          try {
+            const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
+            if (chatApp?.user) {
+              chatApp.user.profilePicture = base64String;
+              localStorage.setItem("ChatApp", JSON.stringify(chatApp));
+            }
+          } catch (error) {
+            console.error("Error updating local storage:", error);
+          }
+          
+          setProfilePicture(base64String);
+          toast.success("Profile picture updated successfully!");
+          setShowProfileModal(false);
+          
+          // Refresh page to update everywhere
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (error) {
+          console.error("Error updating profile picture:", error.response?.data || error.message);
+          toast.error("Failed to update profile picture: " + (error.response?.data?.error || error.message));
+        }
+      } else {
+        setProfilePicture(base64String);
+      }
+    };
+    
+    reader.onerror = () => {
+      toast.error("Error reading image file");
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   const displayImage = profilePicture || defaultImage;

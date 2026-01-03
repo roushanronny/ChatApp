@@ -22,9 +22,10 @@ export const signup = async (req, res) => {
         });
         await newUser.save();
         if (newUser) {
-            createTokenAndSaveCookie(newUser._id, res);
+            const token = createTokenAndSaveCookie(newUser._id, res);
             res.status(201).json({
                 message: "User created successfully",
+                token: token, // Send token in response
                 user: {
                     _id: newUser._id,
                     fullname: newUser.fullname,
@@ -47,9 +48,10 @@ export const login = async (req, res) => {
         if (!user || !isMatch) {
             return res.status(400).json({ error: "Invalid user credential" });
         }
-        createTokenAndSaveCookie(user._id, res);
+        const token = createTokenAndSaveCookie(user._id, res);
         res.status(201).json({
             message: "User logged in successfully",
+            token: token, // Send token in response
             user: {
                 _id: user._id,
                 fullname: user.fullname,
@@ -107,6 +109,32 @@ export const updateProfilePicture = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in updateProfilePicture: " + error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Update Bio controller
+export const updateBio = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { bio } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { bio: bio || "Hey there! I am using WhatsApp" },
+      { new: true }
+    ).select("-password");
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    res.status(200).json({
+      message: "Bio updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.log("Error in updateBio: " + error);
     res.status(500).json({ error: "Internal server error" });
   }
 }; 

@@ -11,6 +11,7 @@ import CallsView from "./home/views/CallsView";
 import StatusView from "./home/views/StatusView";
 import StarredView from "./home/views/StarredView";
 import SettingsView from "./home/views/SettingsView";
+import ArchivedView from "./home/views/ArchivedView";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -20,12 +21,17 @@ function MainLayout() {
   return (
     <div className="flex h-screen">
       <Logout />
-      {activeView === "chats" && <Left />}
-      {activeView === "chats" && <Right />}
+      {activeView === "chats" && (
+        <>
+          <Left />
+          <Right />
+        </>
+      )}
       {activeView === "calls" && <CallsView />}
       {activeView === "status" && <StatusView />}
       {activeView === "starred" && <StarredView />}
       {activeView === "settings" && <SettingsView />}
+      {activeView === "archived" && <ArchivedView />}
       {activeView === "communities" && (
         <div className="w-full bg-[#0B141A] flex items-center justify-center text-[#8696A0]">
           Communities feature coming soon

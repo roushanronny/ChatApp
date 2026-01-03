@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
+import { getToken } from "../utils/getToken.js";
 function useGetAllUsers() {
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -8,7 +9,13 @@ function useGetAllUsers() {
     const getUsers = async () => {
       setLoading(true);
       try {
-        const token = Cookies.get("jwt");
+        const token = getToken();
+        if (!token) {
+          console.error("No token found");
+          setAllUsers([]);
+          setLoading(false);
+          return;
+        }
         const response = await axios.get("/api/user/getUserProfile", {
           credentials: "include",
           headers: {

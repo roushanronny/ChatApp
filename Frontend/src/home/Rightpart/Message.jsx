@@ -1,12 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaCheck, FaCheckDouble } from "react-icons/fa";
+import { FaCheck, FaCheckDouble, FaStar } from "react-icons/fa";
 import MessageContextMenu from "../../components/MessageContextMenu";
+import ReactPicker from "../../components/ReactPicker";
+import ForwardModal from "../../components/ForwardModal";
+import axios from "axios";
+import Cookies from "js-cookie";
+import useConversation from "../../statemanage/useConversation";
+import { getToken } from "../../utils/getToken.js";
 import toast from "react-hot-toast";
 
 function Message({ message }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showReactPicker, setShowReactPicker] = useState(false);
+  const [showForwardModal, setShowForwardModal] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [reactPosition, setReactPosition] = useState({ x: 0, y: 0 });
+  const [reactMessage, setReactMessage] = useState(null);
   const messageRef = useRef(null);
+  const { setMessage: setMessages, messages } = useConversation();
 
   let authUser = null;
   try {
@@ -19,16 +30,29 @@ function Message({ message }) {
   }
   
   const itsMe = authUser?.user?._id === message?.senderId;
+  const userId = authUser?.user?._id;
 
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (e) => {
+      // Don't close if clicking inside context menu or react picker
+      if (e.target.closest('.context-menu') || e.target.closest('.react-picker')) {
+        return;
+      }
       setShowContextMenu(false);
+      setShowReactPicker(false);
     };
-    if (showContextMenu) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
+    if (showContextMenu || showReactPicker) {
+      // Use setTimeout to avoid immediate closing
+      setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+        document.addEventListener("contextmenu", handleClickOutside);
+      }, 100);
+      return () => {
+        document.removeEventListener("click", handleClickOutside);
+        document.removeEventListener("contextmenu", handleClickOutside);
+      };
     }
-  }, [showContextMenu]);
+  }, [showContextMenu, showReactPicker]);
 
   const handleRightClick = (e) => {
     e.preventDefault();
@@ -36,33 +60,279 @@ function Message({ message }) {
     setShowContextMenu(true);
   };
 
-  const handleMessageAction = (action, msg) => {
-    switch(action) {
-      case "reply":
-        toast.info("Reply feature coming soon!");
-        break;
-      case "react":
-        toast.info("React feature coming soon!");
-        break;
-      case "forward":
-        toast.info("Forward feature coming soon!");
-        break;
-      case "star":
-        toast.info("Star feature coming soon!");
-        break;
-      case "delete":
-        toast.info("Delete feature coming soon!");
-        break;
-      default:
-        break;
+  const handleMessageAction = async (action, msg) => {
+    console.log("handleMessageAction called:", action, "msg:", msg?._id, "message prop:", message?._id);
+    
+    // Use msg if provided, otherwise fallback to message prop
+    const targetMessage = msg || message;
+    
+    if (!targetMessage) {
+      console.error("No message provided to handleMessageAction - msg:", msg, "message:", message);
+      return;
+    }
+    
+    if (!targetMessage._id) {
+      console.error("Message _id is missing:", targetMessage);
+      return;
+    }
+    
+    console.log("Target message for action:", targetMessage._id, "Action:", action);
+    
+    setShowContextMenu(false);
+    
+    try {
+      switch(action) {
+        case "reply":
+          // Set reply message in context to show in input field
+          window.dispatchEvent(new CustomEvent('setReplyMessage', { detail: targetMessage }));
+          break;
+        case "react":
+          // Set react picker position before opening
+          const reactX = menuPosition.x;
+          const reactY = menuPosition.y - 100;
+          setReactPosition({ x: reactX, y: reactY });
+          // Store message for react picker
+          setReactMessage(targetMessage);
+          // Small delay to ensure context menu closes before opening react picker
+          setTimeout(() => {
+            setShowReactPicker(true);
+          }, 150);
+          break;
+        case "forward":
+          setShowForwardModal(true);
+          break;
+        case "star":
+          console.log("Calling handleStar for message:", targetMessage._id);
+          await handleStar(targetMessage);
+          break;
+        case "delete":
+          console.log("Calling handleDelete for message:", targetMessage._id);
+          await handleDelete(targetMessage);
+          break;
+        default:
+          console.log("Unknown action:", action);
+          break;
+      }
+    } catch (error) {
+      console.error("Error in handleMessageAction:", error);
     }
   };
+
+  const handleStar = async (msg) => {
+    console.log("⭐⭐⭐ handleStar called for message:", msg?._id);
+    if (!msg || !msg._id) {
+      console.error("Invalid message in handleStar:", msg);
+      return;
+    }
+    
+    try {
+      const token = getToken();
+      
+      if (!token) {
+        console.error("❌ No token found in cookies or localStorage");
+        toast.error("Session expired. Please login again.");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
+      
+      console.log("🌐 Calling star API for message:", msg._id);
+      const response = await axios.put(
+        `/api/message/star/${msg._id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      console.log("✅ Star API response:", response.data);
+      
+      // Update local message without triggering reload - use functional update
+      setMessages(prevMessages => {
+        if (!prevMessages || !Array.isArray(prevMessages)) {
+          console.log("⚠️ prevMessages is not valid array:", prevMessages);
+          return prevMessages || [];
+        }
+        const updated = prevMessages.map(m => {
+          if (m._id === msg._id) {
+            console.log("🔄 Updating message:", m._id, "isStarred:", response.data.isStarred);
+            return { ...m, isStarred: response.data.isStarred };
+          }
+          return m;
+        });
+        console.log("✅ Updated messages count:", updated.length);
+        return updated;
+      });
+    } catch (error) {
+      console.error("❌ Error starring message:", error);
+      console.error("❌ Error response:", error.response?.data);
+      console.error("❌ Error message:", error.message);
+      // Don't show alert, just log the error
+    }
+  };
+
+  const handleDelete = async (msg) => {
+    console.log("🗑️🗑️🗑️ handleDelete called for message:", msg?._id);
+    if (!msg || !msg._id) {
+      console.error("Invalid message in handleDelete:", msg);
+      return;
+    }
+    
+    try {
+      const token = getToken();
+      
+      if (!token) {
+        console.error("❌ No token found in cookies or localStorage");
+        toast.error("Session expired. Please login again.");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
+      
+      console.log("🌐 Calling delete API for message:", msg._id);
+      const response = await axios.delete(
+        `/api/message/delete/${msg._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      console.log("✅ Delete API response:", response.data);
+      
+      // Remove from local messages without triggering reload - use functional update
+      setMessages(prevMessages => {
+        if (!prevMessages || !Array.isArray(prevMessages)) {
+          console.log("⚠️ prevMessages is not valid array:", prevMessages);
+          return prevMessages || [];
+        }
+        const filtered = prevMessages.filter(m => {
+          const shouldKeep = m._id !== msg._id;
+          if (!shouldKeep) {
+            console.log("🗑️ Removing message:", m._id);
+          }
+          return shouldKeep;
+        });
+        console.log("✅ Messages after delete:", filtered.length, "removed 1, total was:", prevMessages.length);
+        return filtered;
+      });
+    } catch (error) {
+      console.error("❌ Error deleting message:", error);
+      console.error("❌ Error response:", error.response?.data);
+      console.error("❌ Error message:", error.message);
+      // Don't show alert, just log the error
+    }
+  };
+
+  const handleReact = async (emoji) => {
+    const targetMsg = reactMessage || message;
+    console.log("😊😊😊 handleReact called with emoji:", emoji, "for message:", targetMsg?._id);
+    
+    if (!targetMsg || !targetMsg._id) {
+      console.error("Invalid message in handleReact:", targetMsg);
+      return;
+    }
+    
+    setShowReactPicker(false);
+    setReactMessage(null);
+    
+    try {
+      const token = getToken();
+      
+      if (!token) {
+        console.error("❌ No token found in cookies or localStorage");
+        toast.error("Session expired. Please login again.");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
+      
+      console.log("🌐 Calling react API for message:", targetMsg._id, "with emoji:", emoji);
+      const response = await axios.put(
+        `/api/message/react/${targetMsg._id}`,
+        { emoji },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      console.log("✅ React API response:", response.data);
+      
+      // Update local message without triggering reload - use functional update
+      setMessages(prevMessages => {
+        if (!prevMessages || !Array.isArray(prevMessages)) {
+          console.log("⚠️ prevMessages is not valid array:", prevMessages);
+          return prevMessages || [];
+        }
+        const updated = prevMessages.map(m => {
+          if (m._id === targetMsg._id) {
+            console.log("🔄 Updating message reactions:", m._id, "reactions:", response.data.reactions);
+            return { ...m, reactions: response.data.reactions };
+          }
+          return m;
+        });
+        console.log("✅ Updated messages count:", updated.length);
+        return updated;
+      });
+    } catch (error) {
+      console.error("❌ Error reacting to message:", error);
+      console.error("❌ Error response:", error.response?.data);
+      console.error("❌ Error message:", error.message);
+      // Don't show alert, just log the error
+    }
+  };
+
+  const handleForward = async (receiverIds) => {
+    try {
+      const token = Cookies.get("jwt");
+      await axios.post(
+        `/api/message/forward/${message._id}`,
+        { receiverIds },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      setShowForwardModal(false);
+    } catch (error) {
+      console.error("Error forwarding message:", error);
+    }
+  };
+
+  const getMyReaction = () => {
+    if (!message.reactions || !userId) return null;
+    return message.reactions.find(r => r.userId?._id === userId || r.userId === userId);
+  };
+
+  const myReaction = getMyReaction();
 
   const createdAt = new Date(message.createdAt);
   const formattedTime = createdAt.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const renderReplyPreview = () => {
+    if (!message.replyTo) return null;
+    const replyMsg = message.replyTo;
+    const isReplyFromMe = replyMsg.senderId?._id === userId || replyMsg.senderId === userId;
+    
+    return (
+      <div className={`mb-1 pb-1 border-l-2 ${isReplyFromMe ? 'border-[#53BDEB]' : 'border-[#8696A0]'} pl-2`}>
+        <div className="text-[#667781] text-xs font-medium">
+          {isReplyFromMe ? "You" : (message.senderId?.fullname || message.senderId || "Unknown")}
+        </div>
+        <div className="text-[#667781] text-xs truncate">
+          {replyMsg.messageType === "image" ? "📷 Image" : 
+           replyMsg.messageType === "video" ? "🎥 Video" :
+           replyMsg.messageType === "audio" ? "🎤 Audio" :
+           replyMsg.message || "Message"}
+        </div>
+      </div>
+    );
+  };
 
   const renderMessageContent = () => {
     if (message.messageType === "image") {
@@ -71,6 +341,7 @@ function Message({ message }) {
       
       return (
         <div>
+          {renderReplyPreview()}
           <img 
             src={imageUrl} 
             alt="Sent" 
@@ -93,6 +364,7 @@ function Message({ message }) {
       
       return (
         <div>
+          {renderReplyPreview()}
           <video 
             src={videoUrl} 
             controls 
@@ -110,7 +382,12 @@ function Message({ message }) {
     
     // For text messages, check both message and content fields
     const textContent = message.message || message.content || "";
-    return <p className="text-[#111B21]">{textContent}</p>;
+    return (
+      <div>
+        {renderReplyPreview()}
+        <p className="text-[#111B21]">{textContent}</p>
+      </div>
+    );
   };
 
   return (
@@ -130,19 +407,39 @@ function Message({ message }) {
             }}
           >
           {renderMessageContent()}
-          <div className="flex items-center justify-end gap-1 mt-0.5">
-            <span className="text-[#667781] text-[11px] leading-tight">{formattedTime}</span>
-            {itsMe && (
-              <span className="flex items-center ml-1">
-                {message.isSeen ? (
-                  <FaCheckDouble className="text-[#53BDEB] text-[11px]" title="Seen" />
-                ) : message.isDelivered ? (
-                  <FaCheckDouble className="text-[#667781] text-[11px]" title="Delivered" />
-                ) : (
-                  <FaCheck className="text-[#667781] text-[11px]" title="Sent" />
-                )}
-              </span>
-            )}
+          <div className="flex items-center justify-between gap-1 mt-0.5">
+            <div className="flex items-center gap-1">
+              {message.reactions && message.reactions.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {message.reactions.map((reaction, idx) => (
+                    <span 
+                      key={idx}
+                      className="bg-[#F0F2F5] px-1.5 py-0.5 rounded-full text-[10px]"
+                      title={reaction.userId?.fullname || "User"}
+                    >
+                      {reaction.emoji} {reaction.userId?._id === userId || reaction.userId === userId ? "You" : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              {message.isStarred && (
+                <FaStar className="text-[#FFC107] text-[10px]" title="Starred" />
+              )}
+              <span className="text-[#667781] text-[11px] leading-tight">{formattedTime}</span>
+              {itsMe && (
+                <span className="flex items-center ml-1">
+                  {message.isSeen ? (
+                    <FaCheckDouble className="text-[#53BDEB] text-[11px]" title="Seen" />
+                  ) : message.isDelivered ? (
+                    <FaCheckDouble className="text-[#667781] text-[11px]" title="Delivered" />
+                  ) : (
+                    <FaCheck className="text-[#667781] text-[11px]" title="Sent" />
+                  )}
+                </span>
+              )}
+            </div>
           </div>
           </div>
         </div>
@@ -154,6 +451,24 @@ function Message({ message }) {
           position={menuPosition}
           onClose={() => setShowContextMenu(false)}
           onAction={handleMessageAction}
+        />
+      )}
+
+      {showReactPicker && (
+        <ReactPicker
+          position={reactPosition}
+          onClose={() => setShowReactPicker(false)}
+          onSelect={handleReact}
+          currentReaction={myReaction?.emoji}
+        />
+      )}
+
+      {showForwardModal && (
+        <ForwardModal
+          isOpen={showForwardModal}
+          onClose={() => setShowForwardModal(false)}
+          onForward={handleForward}
+          message={message}
         />
       )}
     </>

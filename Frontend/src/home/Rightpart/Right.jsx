@@ -9,10 +9,6 @@ import { CiMenuFries } from "react-icons/ci";
 function Right() {
   const { selectedConversation, setSelectedConversation } = useConversation();
   const [searchQuery, setSearchQuery] = useState("");
-  
-  useEffect(() => {
-    return setSelectedConversation(null);
-  }, [setSelectedConversation]);
 
   // Reset search when conversation changes
   useEffect(() => {

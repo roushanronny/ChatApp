@@ -4,6 +4,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthProvider";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 function Signup() {
   const [authUser, setAuthUser] = useAuth();
   const {
@@ -33,11 +34,13 @@ function Signup() {
       .then((response) => {
         if (response.data) {
           toast.success("Signup successful");
-          //alert("signup successful! you can now log in.")
+          // Save token to localStorage and cookie
+          if (response.data.token) {
+            Cookies.set("jwt", response.data.token, { expires: 10 }); // 10 days
+          }
+          localStorage.setItem("ChatApp", JSON.stringify(response.data));
+          setAuthUser(response.data);
         }
-        //localStorage.setItem("messenger", JSON.stringify(response.data));
-        localStorage.setItem("ChatApp",JSON.stringify(response.data));
-        setAuthUser(response.data);
       })
       .catch((error) => {
         if (error.response) {
