@@ -23,7 +23,9 @@ function Login() {
     };
 
     axios
-      .post(getApiUrl("/api/user/login"), userInfo)
+      .post(getApiUrl("/api/user/login"), userInfo, {
+        withCredentials: true,
+      })
       .then((response) => {
         if (response.data) {
           toast.success("Login successful");

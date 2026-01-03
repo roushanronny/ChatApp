@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import useConversation from "../statemanage/useConversation.js";
 import axios from "axios";
 import { getApiUrl } from "../config/api.js";
+import { getToken } from "../utils/getToken.js";
 const useSendMessage = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessage, selectedConversation } = useConversation();
@@ -18,6 +19,7 @@ const useSendMessage = () => {
     setLoading(true);
     try {
       console.log("Sending message:", { messageType, hasMedia: !!mediaUrl, mediaLength: mediaUrl?.length, replyTo });
+      const token = getToken();
       const res = await axios.post(
         getApiUrl(`/api/message/send/${selectedConversation._id}`),
         { 
@@ -27,8 +29,10 @@ const useSendMessage = () => {
           replyTo: replyTo || null
         },
         {
+          withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : undefined,
           }
         }
       );

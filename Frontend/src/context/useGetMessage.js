@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import useConversation from "../statemanage/useConversation.js";
 import axios from "axios";
 import { getApiUrl } from "../config/api.js";
+import { getToken } from "../utils/getToken.js";
 const useGetMessage = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessage, selectedConversation } = useConversation();
@@ -40,8 +41,15 @@ const useGetMessage = () => {
       }
       
       try {
+        const token = getToken();
         const res = await axios.get(
-          getApiUrl(`/api/message/get/${currentConversationId}`)
+          getApiUrl(`/api/message/get/${currentConversationId}`),
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            }
+          }
         );
         // Only update if still on same conversation
         if (conversationIdRef.current === currentConversationId) {

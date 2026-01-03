@@ -31,7 +31,9 @@ function Signup() {
     };
     // console.log(userInfo);
     await axios
-      .post(getApiUrl("/api/user/signup"), userInfo)
+      .post(getApiUrl("/api/user/signup"), userInfo, {
+        withCredentials: true,
+      })
       .then((response) => {
         if (response.data) {
           toast.success("Signup successful");

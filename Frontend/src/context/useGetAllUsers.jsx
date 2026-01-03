@@ -18,7 +18,7 @@ function useGetAllUsers() {
           return;
         }
         const response = await axios.get(getApiUrl("/api/user/getUserProfile"), {
-          credentials: "include",
+          withCredentials: true,
           headers: {
             Authorization: `Bearer ${token}`,
           },

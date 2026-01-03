@@ -19,6 +19,7 @@ function StarredView() {
     try {
       const token = Cookies.get("jwt");
       const response = await axios.get(getApiUrl("/api/message/starred"), {
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
         },

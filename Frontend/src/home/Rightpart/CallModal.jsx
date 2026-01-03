@@ -31,6 +31,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
               status: "missed", // Will update when answered
             },
             {
+              withCredentials: true,
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -98,6 +99,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         getApiUrl(`/api/call/update/${callIdRef.current}`),
         { status, duration },
         {
+          withCredentials: true,
           headers: {
             Authorization: `Bearer ${token}`,
           },

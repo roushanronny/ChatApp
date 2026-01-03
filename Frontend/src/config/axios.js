@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from './api.js';
+import { getToken } from '../utils/getToken.js';
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -10,10 +11,14 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor to include token
+// Add request interceptor to include token automatically
 api.interceptors.request.use(
   (config) => {
-    // Token will be added per request where needed
+    // Automatically add token from cookies/localStorage
+    const token = getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {

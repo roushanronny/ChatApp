@@ -143,6 +143,7 @@ function Message({ message }) {
         getApiUrl(`/api/message/star/${msg._id}`),
         {},
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         }
       );
@@ -196,6 +197,7 @@ function Message({ message }) {
       const response = await axios.delete(
         getApiUrl(`/api/message/delete/${msg._id}`),
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         }
       );
@@ -255,6 +257,7 @@ function Message({ message }) {
         getApiUrl(`/api/message/react/${targetMsg._id}`),
         { emoji },
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         }
       );
@@ -292,6 +295,7 @@ function Message({ message }) {
         getApiUrl(`/api/message/forward/${message._id}`),
         { receiverIds },
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         }
       );

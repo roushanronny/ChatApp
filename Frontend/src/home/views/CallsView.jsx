@@ -20,6 +20,7 @@ function CallsView() {
       if (!token) return;
       
       const response = await axios.get(getApiUrl("/api/call/history"), {
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
         },

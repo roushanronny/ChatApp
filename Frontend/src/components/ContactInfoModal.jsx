@@ -46,11 +46,11 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
         getApiUrl("/api/user/updateBio"),
         { bio: bio.trim() },
         {
+          withCredentials: true,
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          credentials: "include",
         }
       );
       
