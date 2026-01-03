@@ -4,11 +4,13 @@ import axios from "../../config/axios.js";
 import { getApiUrl } from "../../config/api.js";
 import { getToken } from "../../utils/getToken.js";
 import toast from "react-hot-toast";
+import ContactInfoModal from "../../components/ContactInfoModal.jsx";
 
 function SettingsView() {
-  const [authUser] = useAuth();
+  const [authUser, setAuthUser] = useAuth();
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
   useEffect(() => {
     fetchBlockedUsers();
@@ -208,6 +210,15 @@ function SettingsView() {
           </div>
         </div>
       </div>
+      
+      {/* Profile Edit Modal */}
+      {showProfileModal && authUser?.user && (
+        <ContactInfoModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          contact={authUser.user} // Pass current user as contact
+        />
+      )}
     </div>
   );
 }
