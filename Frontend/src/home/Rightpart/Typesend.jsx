@@ -427,35 +427,13 @@ function Typesend() {
         timeslice: timeslice
       });
       
-      // Verify audio is actually being captured
-      const checkAudioLevel = setInterval(() => {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyser);
-        analyser.fftSize = 256;
-        
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyser.getByteFrequencyData(dataArray);
-        
-        // Calculate average audio level
-        const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-        console.log("Audio level:", average.toFixed(2));
-        
-        if (average > 0) {
-          console.log("✓ Audio input detected!");
-        } else {
-          console.warn("⚠ No audio input detected");
-        }
-        
-        audioContext.close();
-      }, 2000); // Check every 2 seconds
-      
-      // Clear audio level check when recording stops
-      setTimeout(() => {
-        clearInterval(checkAudioLevel);
-      }, 30000); // Check for max 30 seconds
+      // Verify audio is being captured (simplified check)
+      console.log("Audio track status:", {
+        enabled: audioTracks[0]?.enabled,
+        readyState: audioTracks[0]?.readyState,
+        muted: audioTracks[0]?.muted,
+        settings: audioTracks[0]?.getSettings()
+      });
       
       setIsRecording(true);
       setRecordingDuration(0);
