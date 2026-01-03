@@ -14,7 +14,12 @@ dotenv.config();
 app.use(express.json({ limit: '50mb' })); // Increase limit for base64 images/videos
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3001",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 const PORT = process.env.PORT || 5004;
 const URI = process.env.MONGODB_URI;
