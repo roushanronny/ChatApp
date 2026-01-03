@@ -402,13 +402,40 @@ function Typesend() {
     }
   };
 
-  const handleMicMouseDown = () => {
-    if (!isRecording) {
-      startRecording();
+  const handleMicMouseDown = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isRecording && !loading) {
+      await startRecording();
     }
   };
 
-  const handleMicMouseUp = () => {
+  const handleMicMouseUp = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
+  const handleMicMouseLeave = (e) => {
+    // If mouse leaves while recording, stop recording
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
+  const handleMicTouchStart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isRecording && !loading) {
+      await startRecording();
+    }
+  };
+
+  const handleMicTouchEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (isRecording) {
       stopRecording();
     }
