@@ -581,17 +581,32 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   };
 
   const handleEndCall = async () => {
-    setCallEnded(true);
+    console.log("📞 Ending call...");
+    
+    // Use refs to ensure we're stopping the correct stream
+    const currentStream = streamRef.current || stream;
+    const currentPeerConnection = peerConnectionRef.current;
     
     // Stop local stream
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    if (currentStream) {
+      console.log("Stopping all stream tracks");
+      currentStream.getTracks().forEach((track) => {
+        track.stop();
+        console.log("✅ Stopped track:", track.kind, track.id);
+      });
+      streamRef.current = null;
+      setStream(null);
     }
     
     // Close peer connection
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
+    if (currentPeerConnection) {
+      try {
+        console.log("Closing peer connection");
+        currentPeerConnection.close();
+        peerConnectionRef.current = null;
+      } catch (err) {
+        console.error("Error closing peer connection:", err);
+      }
     }
     
     // Clear video refs
@@ -602,17 +617,27 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       remoteVideoRef.current.srcObject = null;
     }
     
+    // Set state
+    setCallEnded(true);
+    
     // Update call status
     if (callIdRef.current) {
-      await updateCallStatus(callAccepted ? "answered" : "missed");
+      try {
+        await updateCallStatus(callAccepted ? "answered" : "missed");
+      } catch (err) {
+        console.error("Error updating call status:", err);
+      }
     }
     
-    // Notify other party
+    // Notify other party (only if we're ending the call, not if they already ended it)
     if (socket && selectedConversation) {
+      console.log("📤 Notifying other party that call ended");
       socket.emit("endCall", { to: selectedConversation._id });
     }
     
+    // Close modal after a short delay
     setTimeout(() => {
+      console.log("✅ Closing call modal");
       onClose();
       setCallAccepted(false);
       setCallEnded(false);
@@ -621,7 +646,8 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       incomingOfferRef.current = null;
       callIdRef.current = null;
       callStartTimeRef.current = null;
-    }, 1000);
+      streamRef.current = null;
+    }, 300);
   };
 
   if (!isOpen) return null;
