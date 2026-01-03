@@ -11,7 +11,8 @@ import {
   clearChat,
   toggleMuteChat,
   exportChat,
-  deleteChat
+  deleteChat,
+  getChatMedia
 } from "../controller/message.controller.js";
 import secureRoute from "../middleware/secureRoute.js";
 
@@ -30,5 +31,6 @@ router.delete("/clear/:id", secureRoute, clearChat);
 router.put("/mute/:id", secureRoute, toggleMuteChat);
 router.get("/export/:id", secureRoute, exportChat);
 router.delete("/chat/:id", secureRoute, deleteChat);
+router.get("/media/:id", secureRoute, getChatMedia);
 
 export default router;

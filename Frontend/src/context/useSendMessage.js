@@ -45,6 +45,15 @@ const useSendMessage = () => {
     } catch (error) {
       console.error("Error in send messages:", error.response?.data || error.message);
       setLoading(false);
+      
+      // Show user-friendly error for blocked users
+      if (error.response?.status === 403) {
+        const errorMsg = error.response?.data?.error || "Cannot send message. User may be blocked.";
+        if (window.reactHotToast) {
+          window.reactHotToast.error(errorMsg);
+        }
+      }
+      
       throw error; // Re-throw to handle in component
     }
   };

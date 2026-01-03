@@ -21,5 +21,7 @@ const useConversation = create((set) => ({
       set({ messages: messagesArray });
     }
   },
+  isBlocked: false,
+  setIsBlocked: (isBlocked) => set({ isBlocked }),
 }));
 export default useConversation;

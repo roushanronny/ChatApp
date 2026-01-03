@@ -5,7 +5,10 @@ import {
   logout,
   getUserProfile,
   updateProfilePicture,
-  updateBio
+  updateBio,
+  blockUser,
+  unblockUser,
+  getBlockedUsers
 } from "../controller/user.controller.js";
 import secureRoute from "../middleware/secureRoute.js";
 const router = express.Router();
@@ -16,6 +19,9 @@ router.post("/logout", secureRoute, logout);
 router.get("/getUserProfile",secureRoute,getUserProfile);
 router.put("/updateProfilePicture", secureRoute, updateProfilePicture);
 router.put("/updateBio", secureRoute, updateBio);
+router.post("/block", secureRoute, blockUser);
+router.post("/unblock", secureRoute, unblockUser);
+router.get("/blocked", secureRoute, getBlockedUsers);
 
 export default router;
 

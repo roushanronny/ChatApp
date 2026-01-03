@@ -3,6 +3,7 @@ import useConversation from "../statemanage/useConversation.js";
 import axios from "axios";
 import { getApiUrl } from "../config/api.js";
 import { getToken } from "../utils/getToken.js";
+
 const useGetMessage = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessage, selectedConversation } = useConversation();
@@ -53,7 +54,19 @@ const useGetMessage = () => {
         );
         // Only update if still on same conversation
         if (conversationIdRef.current === currentConversationId) {
-          setMessage(res.data || []);
+          // Handle new response format with messages array and isBlocked flag
+          if (res.data && res.data.messages) {
+            setMessage(res.data.messages);
+            // Store isBlocked in conversation state
+            useConversation.setState({ isBlocked: res.data.isBlocked || false });
+          } else if (Array.isArray(res.data)) {
+            // Backward compatibility
+            setMessage(res.data);
+            useConversation.setState({ isBlocked: false });
+          } else {
+            setMessage([]);
+            useConversation.setState({ isBlocked: false });
+          }
         }
       } catch (error) {
         console.log("Error in getting messages", error);

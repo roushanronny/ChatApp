@@ -137,6 +137,98 @@ export const updateBio = async (req, res) => {
     console.log("Error in updateBio: " + error);
     res.status(500).json({ error: "Internal server error" });
   }
+};
+
+// Block user
+export const blockUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { blockedUserId } = req.body;
+    
+    if (!blockedUserId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+    
+    if (userId.toString() === blockedUserId.toString()) {
+      return res.status(400).json({ error: "Cannot block yourself" });
+    }
+    
+    // Add to blockedUsers array of current user
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { blockedUsers: blockedUserId } },
+      { new: true }
+    ).select("-password");
+    
+    // Add to blockedBy array of blocked user
+    await User.findByIdAndUpdate(
+      blockedUserId,
+      { $addToSet: { blockedBy: userId } }
+    );
+    
+    res.status(200).json({
+      message: "User blocked successfully",
+      user,
+    });
+  } catch (error) {
+    console.log("Error in blockUser: " + error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Unblock user
+export const unblockUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { blockedUserId } = req.body;
+    
+    if (!blockedUserId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+    
+    // Remove from blockedUsers array of current user
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { blockedUsers: blockedUserId } },
+      { new: true }
+    ).select("-password");
+    
+    // Remove from blockedBy array of unblocked user
+    await User.findByIdAndUpdate(
+      blockedUserId,
+      { $pull: { blockedBy: userId } }
+    );
+    
+    res.status(200).json({
+      message: "User unblocked successfully",
+      user,
+    });
+  } catch (error) {
+    console.log("Error in unblockUser: " + error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get blocked users
+export const getBlockedUsers = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    const user = await User.findById(userId)
+      .populate("blockedUsers", "fullname profilePicture email")
+      .select("-password");
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    res.status(200).json({
+      blockedUsers: user.blockedUsers || [],
+    });
+  } catch (error) {
+    console.log("Error in getBlockedUsers: " + error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 }; 
 
 /* export const allUsers = async (req, res) => {

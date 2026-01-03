@@ -10,7 +10,7 @@ function Messages({ searchQuery = "" }) {
   const { loading, messages } = useGetMessage();
   useGetSocketMessage(); // listing incoming messages
   const { socket } = useSocketContext();
-  const { selectedConversation } = useConversation();
+  const { selectedConversation, isBlocked } = useConversation();
   const [isTyping, setIsTyping] = useState(false);
   
   // Ensure messages is always an array
@@ -118,8 +118,19 @@ function Messages({ searchQuery = "" }) {
         </div>
       )}
 
+      {/* Show blocked message */}
+      {isBlocked && (
+        <div className="flex items-center justify-center py-4">
+          <div className="bg-[#FEF9E7] px-4 py-3 rounded-lg max-w-md text-center">
+            <p className="text-[#54656F] text-sm font-medium">
+              ⚠️ This user is blocked. You cannot send or receive messages from them.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Show empty state only when not loading, no messages, and not typing */}
-      {!loading && filteredMessages.length === 0 && !isTyping && safeMessages.length === 0 && (
+      {!loading && filteredMessages.length === 0 && !isTyping && safeMessages.length === 0 && !isBlocked && (
         <div className="flex items-center justify-center h-full -mt-20">
           <div className="text-center">
             <p className="text-[#667781] text-lg">

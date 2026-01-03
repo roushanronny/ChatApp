@@ -7,6 +7,24 @@ export const sendMessage = async (req, res) => {
     const { message, messageType = "text", mediaUrl = "", replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id; // current logged in user
+    
+    // Check if user is blocked
+    const User = (await import("../models/user.model.js")).default;
+    const sender = await User.findById(senderId);
+    const receiver = await User.findById(receiverId);
+    
+    if (!sender || !receiver) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    // Check if sender has blocked receiver or receiver has blocked sender
+    if (sender.blockedUsers && sender.blockedUsers.includes(receiverId)) {
+      return res.status(403).json({ error: "You cannot send messages to this user. They are blocked." });
+    }
+    if (receiver.blockedUsers && receiver.blockedUsers.includes(senderId)) {
+      return res.status(403).json({ error: "You cannot send messages. You have been blocked by this user." });
+    }
+    
     let conversation = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
     });
@@ -53,6 +71,18 @@ export const getMessage = async (req, res) => {
   try {
     const { id: chatUser } = req.params;
     const senderId = req.user._id; // current logged in user
+    
+    // Check if user is blocked
+    const User = (await import("../models/user.model.js")).default;
+    const sender = await User.findById(senderId);
+    const receiver = await User.findById(chatUser);
+    
+    let isBlocked = false;
+    if (sender && receiver) {
+      isBlocked = (sender.blockedUsers && sender.blockedUsers.includes(chatUser)) ||
+                  (receiver.blockedUsers && receiver.blockedUsers.includes(senderId));
+    }
+    
     let conversation = await Conversation.findOne({
       members: { $all: [senderId, chatUser] },
     }).populate({
@@ -69,7 +99,7 @@ export const getMessage = async (req, res) => {
       ],
     });
     if (!conversation) {
-      return res.status(201).json([]);
+      return res.status(201).json({ messages: [], isBlocked });
     }
     // Filter out deleted messages
     const messages = conversation.messages.filter(msg => !msg.isDeleted);
@@ -93,7 +123,7 @@ export const getMessage = async (req, res) => {
       io.to(senderSocketId).emit("messagesSeen", { receiverId: senderId });
     }
     
-    res.status(201).json(messages);
+    res.status(201).json({ messages, isBlocked });
   } catch (error) {
     console.log("Error in getMessage", error);
     res.status(500).json({ error: "Internal server error" });
@@ -491,6 +521,76 @@ export const deleteChat = async (req, res) => {
     res.status(200).json({ message: "Chat deleted successfully" });
   } catch (error) {
     console.log("Error in deleteChat", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get media, links, and docs from a chat
+export const getChatMedia = async (req, res) => {
+  try {
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
+    
+    const conversation = await Conversation.findOne({
+      members: { $all: [senderId, receiverId] },
+    }).populate({
+      path: "messages",
+      populate: [
+        { path: "senderId", select: "fullname" },
+      ],
+    });
+    
+    if (!conversation) {
+      return res.status(200).json({
+        media: [],
+        links: [],
+        docs: [],
+      });
+    }
+    
+    const messages = conversation.messages.filter(msg => !msg.isDeleted);
+    
+    // Filter media (images and videos)
+    const media = messages.filter(msg => 
+      msg.messageType === "image" || msg.messageType === "video"
+    ).map(msg => ({
+      _id: msg._id,
+      messageType: msg.messageType,
+      mediaUrl: msg.mediaUrl,
+      message: msg.message,
+      senderId: msg.senderId,
+      createdAt: msg.createdAt,
+    }));
+    
+    // Filter links (messages containing URLs)
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const links = messages.filter(msg => {
+      if (msg.messageType !== "text") return false;
+      return urlRegex.test(msg.message);
+    }).map(msg => ({
+      _id: msg._id,
+      message: msg.message,
+      senderId: msg.senderId,
+      createdAt: msg.createdAt,
+      links: msg.message.match(urlRegex) || [],
+    }));
+    
+    // Filter docs (files)
+    const docs = messages.filter(msg => msg.messageType === "file").map(msg => ({
+      _id: msg._id,
+      mediaUrl: msg.mediaUrl,
+      message: msg.message,
+      senderId: msg.senderId,
+      createdAt: msg.createdAt,
+    }));
+    
+    res.status(200).json({
+      media,
+      links,
+      docs,
+    });
+  } catch (error) {
+    console.log("Error in getChatMedia", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
