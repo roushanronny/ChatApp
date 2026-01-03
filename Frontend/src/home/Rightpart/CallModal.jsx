@@ -198,8 +198,18 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
+      console.log("📹 Remote track received:", event.track.kind, event.streams.length);
+      if (event.streams && event.streams[0]) {
+        const remoteStream = event.streams[0];
+        if (remoteVideoRef.current) {
+          console.log("Setting remote video stream");
+          remoteVideoRef.current.srcObject = remoteStream;
+          remoteVideoRef.current.play().catch(err => {
+            console.error("Error playing remote video:", err);
+          });
+        } else {
+          console.warn("remoteVideoRef.current is null");
+        }
       }
     };
 
@@ -220,12 +230,20 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
 
   // Update video element when stream changes
   useEffect(() => {
-    if (stream && localVideoRef.current) {
+    if (stream && localVideoRef.current && !callEnded) {
+      console.log("Updating local video element with stream");
       localVideoRef.current.srcObject = stream;
       // Force play to ensure video displays
-      localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+      localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
     }
-  }, [stream, currentCallType]);
+    
+    // Also update if streamRef exists but state stream doesn't
+    if (!stream && streamRef.current && localVideoRef.current && !callEnded) {
+      console.log("Updating local video from streamRef");
+      localVideoRef.current.srcObject = streamRef.current;
+      localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+    }
+  }, [stream, currentCallType, callEnded]);
 
   useEffect(() => {
     if (isOpen && socket && selectedConversation) {
@@ -550,16 +568,26 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
     try {
       // Get user media
       const currentStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
+      console.log("✅ Got user media, tracks:", currentStream.getTracks().length);
       setStream(currentStream);
       streamRef.current = currentStream; // Store in ref for event handlers
+      
+      // Update local video element immediately
       if (localVideoRef.current) {
+        console.log("Setting local video stream");
         localVideoRef.current.srcObject = currentStream;
-        localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+        localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+      } else {
+        console.warn("localVideoRef.current is null");
       }
 
       // Create peer connection
       peerConnectionRef.current = createPeerConnection();
+      console.log("Created peer connection for incoming call");
+      
+      // Add tracks to peer connection
       currentStream.getTracks().forEach(track => {
+        console.log("Adding track to peer connection:", track.kind, track.id);
         peerConnectionRef.current.addTrack(track, currentStream);
       });
 
@@ -773,14 +801,21 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                   )}
                   
                   {/* Local video as PIP when call is accepted */}
-                  {callAccepted && (
+                  {callAccepted && !callEnded && (
                     <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45] z-10">
                       <video
+                        key={`local-${streamRef.current?.id || stream?.id || 'video'}`}
                         ref={localVideoRef}
                         autoPlay
                         playsInline
                         muted
                         className="w-full h-full object-cover"
+                        onLoadedMetadata={() => {
+                          console.log("Local PIP video metadata loaded");
+                          if (localVideoRef.current) {
+                            localVideoRef.current.play().catch(err => console.error("Error playing local PIP video:", err));
+                          }
+                        }}
                       />
                     </div>
                   )}
