@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
-import { FaPaperclip, FaSmile, FaMicrophone, FaTimes, FaStop, FaCheckCircle } from "react-icons/fa";
+import { FaPaperclip, FaSmile, FaMicrophone, FaTimes, FaStop, FaCheckCircle, FaFile } from "react-icons/fa";
 import useSendMessage from "../../context/useSendMessage.js";
 import { useSocketContext } from "../../context/SocketContext.jsx";
 import useConversation from "../../statemanage/useConversation.js";
