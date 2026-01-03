@@ -596,7 +596,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               </p>
               
               {/* Status */}
-              {!callAccepted && !callEnded && (
+              {isIncomingCall && !callAccepted && !callEnded && (
+                <p className="text-[#8696A0] text-lg">Incoming call...</p>
+              )}
+              {!isIncomingCall && !callAccepted && !callEnded && (
                 <p className="text-[#8696A0] text-lg">Ringing...</p>
               )}
               {callAccepted && !callEnded && (
@@ -622,8 +625,35 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             </div>
           )}
 
-          {/* Call Controls Bar - Show for both audio and video calls */}
-          {!callEnded && (
+          {/* Incoming Call Accept/Reject Buttons */}
+          {isIncomingCall && !callAccepted && !callEnded && (
+            <div className={`bg-[#111B21] rounded-lg px-8 py-6 flex items-center justify-center space-x-6 ${currentCallType === "video" ? "absolute bottom-4 left-1/2 -translate-x-1/2 z-30" : "w-full"}`}>
+              {/* Reject Button */}
+              <button
+                onClick={handleRejectCall}
+                className="bg-red-500 hover:bg-red-600 text-white p-5 rounded-full transition shadow-lg transform hover:scale-110"
+                title="Reject Call"
+              >
+                <FaPhoneSlash className="text-3xl" />
+              </button>
+
+              {/* Accept Button */}
+              <button
+                onClick={handleAcceptCall}
+                className="bg-[#25D366] hover:bg-[#20BA5A] text-white p-5 rounded-full transition shadow-lg transform hover:scale-110"
+                title="Accept Call"
+              >
+                {currentCallType === "video" ? (
+                  <FaVideo className="text-3xl" />
+                ) : (
+                  <FaPhone className="text-3xl" />
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Call Controls Bar - Show when call is accepted or outgoing */}
+          {!isIncomingCall && !callEnded && (
             <div className={`${currentCallType === "video" ? "absolute bottom-0 left-0 right-0" : ""} bg-[#111B21] rounded-lg px-6 py-4 flex items-center justify-between ${currentCallType === "video" ? "mx-4 mb-4" : ""}`}>
             {/* Speaker Button */}
             <button
