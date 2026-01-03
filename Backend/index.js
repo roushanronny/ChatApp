@@ -24,16 +24,24 @@ app.use(cors({
 const PORT = process.env.PORT || 5004;
 const URI = process.env.MONGODB_URI;
 
+if (!URI) {
+    console.error("\n❌ ERROR: MONGODB_URI environment variable is not set!");
+    console.error("Please add MONGODB_URI in Railway dashboard → Variables tab");
+    console.error("Example: mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/chatapp\n");
+    process.exit(1);
+}
+
 mongoose.connect(URI)
     .then(() => {
-        console.log("Connected to MongoDB");
+        console.log("✅ Connected to MongoDB successfully");
     })
     .catch((error) => {
-        console.log("MongoDB connection error:", error.message);
-        console.log("\n⚠️  Fix this issue:");
-        console.log("1. Check your IP is whitelisted in MongoDB Atlas");
-        console.log("2. Go to: https://cloud.mongodb.com/ → Network Access");
-        console.log("3. Add your current IP or 0.0.0.0/0 (for testing)\n");
+        console.error("\n❌ MongoDB connection error:", error.message);
+        console.error("\n⚠️  Fix this issue:");
+        console.error("1. Check MONGODB_URI is set correctly in Railway Variables");
+        console.error("2. Check your IP is whitelisted in MongoDB Atlas");
+        console.error("3. Go to: https://cloud.mongodb.com/ → Network Access");
+        console.error("4. Add 0.0.0.0/0 to allow all IPs (or Railway IPs)\n");
     });
 
 //routes
