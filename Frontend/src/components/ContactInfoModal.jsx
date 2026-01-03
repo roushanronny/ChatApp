@@ -29,20 +29,29 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
 
   useEffect(() => {
     if (contact) {
-      setBio(contact.bio || "Hey there! I am using WhatsApp");
-      setProfilePicture(contact.profilePicture || "");
+      const contactBio = contact.bio || "Hey there! I am using WhatsApp";
+      const contactPicture = contact.profilePicture || "";
+      
+      setBio(contactBio);
+      setProfilePicture(contactPicture);
+      setHasChanges(false);
+      setIsEditingBio(false);
       
       // Check if blocked
-      if (authUser?.user?.blockedUsers) {
-        setIsBlocked(authUser.user.blockedUsers.includes(contact._id));
+      if (authUser?.user?.blockedUsers && Array.isArray(authUser.user.blockedUsers)) {
+        setIsBlocked(authUser.user.blockedUsers.some(id => 
+          (typeof id === 'string' ? id : id.toString()) === contact._id.toString()
+        ));
+      } else {
+        setIsBlocked(false);
       }
       
       // Fetch media, links, docs if not current user
-      if (!isCurrentUser) {
+      if (!isCurrentUser && contact._id) {
         fetchChatMedia();
       }
     }
-  }, [contact, authUser]);
+  }, [contact, authUser, isCurrentUser]);
 
   if (!isOpen || !contact) return null;
 
