@@ -9,7 +9,8 @@ https://chatapp-production-810e.up.railway.app
 
 ### Frontend (Vercel):
 ```
-https://chat-app-two-bice-70.vercel.app
+Primary: https://chat-app-roushan.vercel.app
+Backup: https://chat-app-two-bice-70.vercel.app
 ```
 
 ---
@@ -23,14 +24,14 @@ Railway dashboard में `FRONTEND_URL` variable update करें:
 3. `FRONTEND_URL` variable को edit करें
 4. Value update करें:
    ```
-   https://chat-app-two-bice-70.vercel.app
+   https://chat-app-roushan.vercel.app
    ```
 5. Save करें - Railway auto-redeploy होगा
 
 **अभी के लिए Railway Variables:**
 - ✅ MONGODB_URI = mongodb+srv://roushanydv2003_db_user:Ronny%400112@cluster0.jik2c4j.mongodb.net/chatapp?retryWrites=true&w=majority
 - ✅ JWT_TOKEN = ChatAppSecretKey2024!@#$%^&*Ronny0112
-- 🔄 FRONTEND_URL = https://chat-app-two-bice-70.vercel.app (UPDATE करें)
+- ✅ FRONTEND_URL = https://chat-app-roushan.vercel.app
 - ✅ NODE_ENV = production
 
 ---
@@ -55,7 +56,8 @@ VITE_SOCKET_URL=https://chatapp-production-810e.up.railway.app
 
 ### 1. Frontend URL खोलें:
 ```
-https://chat-app-two-bice-70.vercel.app
+Primary: https://chat-app-roushan.vercel.app
+Backup: https://chat-app-two-bice-70.vercel.app
 ```
 
 ### 2. Test करें:
@@ -113,6 +115,7 @@ https://chat-app-two-bice-70.vercel.app
 
 अगर सब कुछ सही से setup है, तो आपका ChatApp अब **LIVE** है! 🚀
 
-**Frontend:** https://chat-app-two-bice-70.vercel.app  
+**Frontend (Primary):** https://chat-app-roushan.vercel.app  
+**Frontend (Backup):** https://chat-app-two-bice-70.vercel.app  
 **Backend:** https://chatapp-production-810e.up.railway.app
 
