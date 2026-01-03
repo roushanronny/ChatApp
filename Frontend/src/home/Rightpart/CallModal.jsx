@@ -14,11 +14,13 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [currentCallType, setCurrentCallType] = useState(callType); // Can switch between audio/video
+  const [isIncomingCall, setIsIncomingCall] = useState(false); // Track if this is an incoming call
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const callStartTimeRef = useRef(null);
   const callIdRef = useRef(null);
+  const incomingOfferRef = useRef(null); // Store the incoming offer
   const authUser = JSON.parse(localStorage.getItem("ChatApp"));
 
   // Toggle mute/unmute
@@ -231,14 +233,16 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       setIsMuted(false);
       setIsSpeakerOn(false);
       
-      // If this is an incoming call (receiver), handle it differently
+      // If this is an incoming call (receiver), just store the offer and wait for user to accept
       if (incomingCall && incomingCall.type === "offer") {
-        console.log("Handling incoming call offer - answering call");
+        console.log("📞 Incoming call received - waiting for user to accept/reject");
         
         // Update call type
         setCurrentCallType(callType || incomingCall.callType || "video");
+        setIsIncomingCall(true);
+        incomingOfferRef.current = incomingCall; // Store the offer for later
         
-        // Save call to history as answered
+        // Save call to history as missed (will update to answered if accepted)
         const saveCall = async () => {
           try {
             const token = Cookies.get("jwt");
@@ -247,7 +251,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               {
                 receiverId: selectedConversation._id,
                 callType: callType || incomingCall.callType || "video",
-                status: "answered",
+                status: "missed", // Will be updated to answered if user accepts
               },
               {
                 withCredentials: true,
@@ -257,63 +261,14 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               }
             );
             callIdRef.current = response.data.call._id;
-            callStartTimeRef.current = new Date();
             console.log("Call saved to history:", response.data);
           } catch (error) {
             console.error("Error saving call:", error);
           }
         };
         
-        // Get user media and answer the call
-        const incomingCallType = callType || incomingCall.callType || "video";
-        navigator.mediaDevices
-          .getUserMedia(getMediaConstraints())
-          .then(async (currentStream) => {
-            setStream(currentStream);
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = currentStream;
-              localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
-            }
-
-            // Create peer connection
-            peerConnectionRef.current = createPeerConnection();
-            currentStream.getTracks().forEach(track => {
-              peerConnectionRef.current.addTrack(track, currentStream);
-            });
-
-            // Set remote description (offer)
-            await peerConnectionRef.current.setRemoteDescription(
-              new RTCSessionDescription(incomingCall)
-            );
-            console.log("Remote description (offer) set");
-
-            // Create answer
-            const answer = await peerConnectionRef.current.createAnswer();
-            await peerConnectionRef.current.setLocalDescription(answer);
-            console.log("Answer created and local description set");
-
-            // Send answer back to caller
-            socket.emit("answerCall", {
-              to: selectedConversation._id,
-              signal: peerConnectionRef.current.localDescription,
-              from: authUser?.user?._id,
-            });
-            console.log("Answer sent to caller:", selectedConversation._id);
-
-            // Mark as accepted
-            setCallAccepted(true);
-            
-            // Save call
-            await saveCall();
-            
-            toast.success("Call answered");
-          })
-          .catch((err) => {
-            console.error("Error accessing media devices:", err);
-            toast.error("Camera/Microphone access denied");
-          });
-        
-        return; // Exit early for incoming calls
+        saveCall();
+        return; // Exit early - don't auto-answer, wait for user action
       }
       
       // This is an outgoing call (caller) - initiate call
