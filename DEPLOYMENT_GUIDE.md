@@ -75,7 +75,13 @@ VITE_API_URL=https://your-railway-app.up.railway.app
 VITE_SOCKET_URL=https://your-railway-app.up.railway.app
 ```
 
-**Important:** Railway का backend URL यहाँ add करें (Step 1.4 में मिला था)
+**Important:** 
+- Railway का backend URL यहाँ add करें (Step 1.4 में मिला था)
+- **HTTP नहीं, HTTPS URL use करें**
+- URL के अंत में `/` (slash) नहीं होना चाहिए
+- Example: `https://chat-app-production.up.railway.app` ✅
+- Wrong: `http://chat-app-production.up.railway.app` ❌
+- Wrong: `https://chat-app-production.up.railway.app/` ❌
 
 ### 2.3 Deploy
 
@@ -118,9 +124,10 @@ VITE_SOCKET_URL=https://your-railway-app.up.railway.app
 ### Frontend Issues
 
 **Problem:** API calls fail हो रहे हैं
-- Check: `VITE_API_URL` Vercel में सही add है
-- Check: Railway backend URL सही है
-- Browser console में CORS errors check करें
+- Check: `VITE_API_URL` Vercel में सही add है (HTTPS, no trailing slash)
+- Check: Railway backend URL सही है और working है
+- Check: Browser console में CORS errors - Railway CORS में frontend URL allow है
+- Note: Development में Vite proxy use होता है, production में full backend URL चाहिए
 
 **Problem:** Socket.io connection fail
 - Check: `VITE_SOCKET_URL` environment variable set है
