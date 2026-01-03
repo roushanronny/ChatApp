@@ -11,6 +11,9 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
   const [stream, setStream] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+  const [currentCallType, setCurrentCallType] = useState(callType); // Can switch between audio/video
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -143,7 +146,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
           peerConnectionRef.current
             .createOffer({
               offerToReceiveAudio: true,
-              offerToReceiveVideo: callType === "video",
+              offerToReceiveVideo: currentCallType === "video",
             })
             .then((offer) => {
               return peerConnectionRef.current.setLocalDescription(offer);
@@ -306,7 +309,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
       <div className="bg-[#202C33] rounded-lg p-6 max-w-4xl w-full h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-white text-xl font-semibold">
-            {callType === "video" ? "Video Call" : "Audio Call"}
+            {currentCallType === "video" ? "Video Call" : "Audio Call"}
           </h2>
           <button onClick={handleEndCall} className="text-[#8696A0] hover:text-white transition">
             <FaTimes className="text-2xl" />
@@ -389,9 +392,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
             </div>
           )}
 
-          {callType === "audio" && (
-            <div className="text-center">
-              <div className="w-32 h-32 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-6">
+          {currentCallType === "audio" && (
+            <div className="flex-1 flex flex-col items-center justify-center">
+              {/* Profile Picture */}
+              <div className="w-48 h-48 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                 {selectedConversation?.profilePicture ? (
                   <img 
                     src={selectedConversation.profilePicture} 
@@ -399,38 +403,100 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-4xl text-[#8696A0]">
+                  <span className="text-7xl text-[#8696A0]">
                     {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
                   </span>
                 )}
               </div>
-              <p className="text-white text-2xl font-semibold mb-2">
+              
+              {/* Name */}
+              <p className="text-white text-3xl font-semibold mb-2">
                 {selectedConversation?.fullname || selectedConversation?.name}
               </p>
+              
+              {/* Status */}
               {!callAccepted && !callEnded && (
-                <p className="text-[#8696A0]">Calling...</p>
+                <p className="text-[#8696A0] text-lg">Ringing...</p>
+              )}
+              {callAccepted && !callEnded && (
+                <p className="text-[#25D366] text-lg">Connected</p>
+              )}
+              
+              {/* Calling animation */}
+              {!callAccepted && !callEnded && (
+                <div className="flex justify-center space-x-2 mt-4">
+                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                </div>
               )}
             </div>
           )}
 
-          {!callAccepted && !callEnded && callType === "audio" && (
-            <div className="flex justify-center space-x-4 mt-6">
-              <div className="w-4 h-4 bg-[#25D366] rounded-full animate-pulse"></div>
-              <div className="w-4 h-4 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-4 h-4 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-          )}
-
           {callEnded && (
-            <div className="text-white text-center">
-              <p className="text-lg text-[#8696A0]">Call Ended</p>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-2xl text-[#8696A0] mb-2">Call Ended</p>
+              </div>
             </div>
           )}
 
-          <div className="flex justify-center space-x-4 mt-6">
+          {/* Call Controls Bar */}
+          <div className="bg-[#111B21] rounded-lg px-6 py-4 flex items-center justify-between">
+            {/* Speaker Button */}
+            <button
+              onClick={toggleSpeaker}
+              className={`p-3 rounded-full transition ${
+                isSpeakerOn 
+                  ? "bg-[#25D366] text-white" 
+                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
+              }`}
+              title={isSpeakerOn ? "Speaker On" : "Speaker Off"}
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {/* Video Toggle Button */}
+            <button
+              onClick={toggleVideo}
+              className={`p-3 rounded-full transition ${
+                currentCallType === "video"
+                  ? "bg-[#25D366] text-white"
+                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
+              }`}
+              title={currentCallType === "video" ? "Video On" : "Video Off"}
+            >
+              <FaVideo className="w-6 h-6" />
+            </button>
+
+            {/* Mute Button */}
+            <button
+              onClick={toggleMute}
+              className={`p-3 rounded-full transition ${
+                isMuted
+                  ? "bg-red-500 text-white"
+                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
+              }`}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L8.293 3.34a1 1 0 011.414 1.414L6.524 7.938a4 4 0 005.538 5.538l2.232 2.232a1 1 0 11-1.414 1.414l-2.232-2.232zM5.11 6.524a6 6 0 008.367 8.367l-1.402-1.402a4 4 0 01-5.537-5.537L5.11 6.524zm8.367 1.414a1 1 0 011.414 0l3 3a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+
+            {/* End Call Button */}
             <button
               onClick={handleEndCall}
               className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full transition shadow-lg"
+              title="End Call"
             >
               <FaPhoneSlash className="text-2xl" />
             </button>
