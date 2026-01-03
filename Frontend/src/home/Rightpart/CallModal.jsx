@@ -821,11 +821,15 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                     ref={remoteVideoRef}
                     autoPlay
                     playsInline
+                    muted={false}
                     className="w-full h-full object-cover"
                     onLoadedMetadata={() => {
                       console.log("📹 Remote video metadata loaded");
                       if (remoteVideoRef.current) {
+                        remoteVideoRef.current.muted = false;
+                        remoteVideoRef.current.volume = 1.0;
                         remoteVideoRef.current.play().catch(err => console.error("Error playing remote video:", err));
+                        console.log("✅ Remote video playing with audio, muted:", remoteVideoRef.current.muted);
                       }
                     }}
                   />
