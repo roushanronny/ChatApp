@@ -822,15 +822,15 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               </p>
               
               {/* Status */}
-              {isIncomingCall && !callAccepted && !callEnded && (
+              {callEnded ? (
+                <p className="text-red-500 text-lg">Call Ended</p>
+              ) : isIncomingCall && !callAccepted ? (
                 <p className="text-[#8696A0] text-lg">Incoming call...</p>
-              )}
-              {!isIncomingCall && !callAccepted && !callEnded && (
+              ) : !isIncomingCall && !callAccepted ? (
                 <p className="text-[#8696A0] text-lg">Ringing...</p>
-              )}
-              {callAccepted && !callEnded && (
+              ) : callAccepted ? (
                 <p className="text-[#25D366] text-lg">Connected</p>
-              )}
+              ) : null}
               
               {/* Calling animation */}
               {!callAccepted && !callEnded && (
