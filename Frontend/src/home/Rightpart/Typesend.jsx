@@ -293,29 +293,72 @@ function Typesend() {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1,
+          volume: 1.0,
         } 
       });
       
       console.log("Microphone access granted");
       
-      // Check if MediaRecorder is supported
-      if (!MediaRecorder.isTypeSupported("audio/webm")) {
-        console.warn("audio/webm not supported, trying default");
+      // Verify audio tracks are active
+      const audioTracks = stream.getAudioTracks();
+      console.log("Audio tracks:", audioTracks.length);
+      if (audioTracks.length === 0) {
+        toast.error("No audio input device found");
+        stream.getTracks().forEach(track => track.stop());
+        return;
       }
       
-      const options = { mimeType: "audio/webm" };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        // Fallback to default
+      audioTracks.forEach((track, index) => {
+        console.log(`Audio track ${index}:`, {
+          enabled: track.enabled,
+          readyState: track.readyState,
+          label: track.label,
+          settings: track.getSettings()
+        });
+        
+        // Ensure track is enabled
+        if (!track.enabled) {
+          track.enabled = true;
+          console.log(`Enabled audio track ${index}`);
+        }
+      });
+      
+      // Check if MediaRecorder is supported and find best format
+      let mimeType = "audio/webm";
+      const supportedTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+        "audio/mpeg"
+      ];
+      
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          console.log("Using audio format:", mimeType);
+          break;
+        }
+      }
+      
+      const options = { mimeType };
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        console.warn("Preferred format not supported, using default");
         delete options.mimeType;
       }
       
+      console.log("Creating MediaRecorder with options:", options);
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          console.log("Audio chunk received:", event.data.size, "bytes");
+          console.log("Audio chunk received:", event.data.size, "bytes", "Total chunks:", audioChunksRef.current.length);
+        } else {
+          console.warn("Received empty audio chunk");
         }
       };
 
@@ -372,11 +415,51 @@ function Typesend() {
         }
       };
 
-      mediaRecorderRef.current.start(100); // Collect data every 100ms
+      // Use timeslice to collect data more frequently for better quality
+      // Timeslice of 100ms means data will be available every 100ms
+      const timeslice = 100;
+      mediaRecorderRef.current.start(timeslice);
+      
+      console.log("Recording started with state:", mediaRecorderRef.current.state);
+      console.log("Recording settings:", {
+        mimeType: mediaRecorderRef.current.mimeType,
+        state: mediaRecorderRef.current.state,
+        timeslice: timeslice
+      });
+      
+      // Verify audio is actually being captured
+      const checkAudioLevel = setInterval(() => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+        
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Calculate average audio level
+        const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+        console.log("Audio level:", average.toFixed(2));
+        
+        if (average > 0) {
+          console.log("✓ Audio input detected!");
+        } else {
+          console.warn("⚠ No audio input detected");
+        }
+        
+        audioContext.close();
+      }, 2000); // Check every 2 seconds
+      
+      // Clear audio level check when recording stops
+      setTimeout(() => {
+        clearInterval(checkAudioLevel);
+      }, 30000); // Check for max 30 seconds
+      
       setIsRecording(true);
       setRecordingDuration(0);
       setShowRecordingControls(false);
-      console.log("Recording started");
       
       // Start duration counter
       recordingIntervalRef.current = setInterval(() => {
