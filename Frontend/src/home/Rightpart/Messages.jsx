@@ -66,7 +66,7 @@ function Messages({ searchQuery = "" }) {
 
   return (
     <div
-      className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 bg-[#0B141A] relative"
+      className="h-full overflow-y-auto overflow-x-hidden px-4 py-2 bg-[#0B141A] relative"
       style={{ 
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='whatsapp-pattern' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 100 0 L 0 0 0 100' fill='none' stroke='%23444547' stroke-width='0.5' opacity='0.08'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23whatsapp-pattern)'/%3E%3C/svg%3E")`,
         minHeight: '100%',

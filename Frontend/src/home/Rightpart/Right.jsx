@@ -21,9 +21,18 @@ function Right() {
         <NoChatSelected />
       ) : (
         <>
-          <Chatuser searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-          <Messages searchQuery={searchQuery} />
-          <Typesend />
+          {/* Header - Fixed at top */}
+          <div className="flex-shrink-0">
+            <Chatuser searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+          </div>
+          {/* Messages area - Scrollable */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <Messages searchQuery={searchQuery} />
+          </div>
+          {/* Input area - Fixed at bottom */}
+          <div className="flex-shrink-0">
+            <Typesend />
+          </div>
         </>
       )}
     </div>
