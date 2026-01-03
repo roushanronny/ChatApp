@@ -207,23 +207,44 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         const remoteTracks = remoteStream.getTracks();
         console.log("Remote stream tracks:", remoteTracks.map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled })));
         
-        // Set remote video element
+        // Set remote video element - force update
         if (remoteVideoRef.current) {
-          console.log("Setting remote video stream (audio + video)");
+          console.log("✅ Setting remote video stream (audio + video)");
           remoteVideoRef.current.srcObject = remoteStream;
           // Ensure audio is NOT muted for remote video
           remoteVideoRef.current.muted = false;
           remoteVideoRef.current.volume = 1.0;
-          remoteVideoRef.current.play().catch(err => {
-            console.error("Error playing remote video:", err);
-          });
+          
+          // Force play immediately
+          remoteVideoRef.current.play()
+            .then(() => {
+              console.log("✅ Remote video playing successfully");
+            })
+            .catch(err => {
+              console.error("Error playing remote video:", err);
+              // Retry after a short delay
+              setTimeout(() => {
+                if (remoteVideoRef.current) {
+                  remoteVideoRef.current.play().catch(e => console.error("Retry failed:", e));
+                }
+              }, 500);
+            });
         } else {
-          console.warn("remoteVideoRef.current is null");
+          console.warn("⚠️ remoteVideoRef.current is null - video element not ready");
+          // Retry after component re-renders
+          setTimeout(() => {
+            if (remoteVideoRef.current && remoteStream) {
+              console.log("Retrying to set remote video stream");
+              remoteVideoRef.current.srcObject = remoteStream;
+              remoteVideoRef.current.muted = false;
+              remoteVideoRef.current.volume = 1.0;
+              remoteVideoRef.current.play().catch(err => console.error("Error in retry:", err));
+            }
+          }, 1000);
         }
         
         // Also handle audio-only case (for audio calls)
         if (event.track.kind === 'audio' && !remoteVideoRef.current) {
-          // For audio calls, we might need an audio element
           console.log("Audio track received for audio call");
         }
       }
@@ -768,15 +789,17 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       }
     }
     
-    // Notify other party that we're ending the call
-    if (socket && selectedConversation && !callEnded) {
+    // Notify other party that we're ending the call - ALWAYS emit, even if callEnded is true
+    if (socket && selectedConversation) {
       console.log("📤 Notifying other party that call ended, receiverId:", selectedConversation._id);
       try {
         socket.emit("endCall", { to: selectedConversation._id });
-        console.log("✅ endCall event emitted");
+        console.log("✅ endCall event emitted to:", selectedConversation._id);
       } catch (err) {
         console.error("Error emitting endCall:", err);
       }
+    } else {
+      console.warn("Cannot emit endCall - socket or selectedConversation missing");
     }
     
     // Reset states
