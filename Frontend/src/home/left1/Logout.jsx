@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { useView } from "../../context/ViewContext.jsx";
 import { getApiUrl } from "../../config/api.js";
+import { getToken } from "../../utils/getToken.js";
 
 function Logout() {
   const [loading, setLoading] = useState(false);
@@ -14,9 +15,17 @@ function Logout() {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      const res = await axios.post(getApiUrl("/api/user/logout"), {}, {
-        withCredentials: true,
-      });
+      const token = getToken();
+      const res = await axios.post(
+        getApiUrl("/api/user/logout"), 
+        {}, 
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          }
+        }
+      );
       localStorage.removeItem("ChatApp");
       Cookies.remove("jwt");
       setLoading(false);
@@ -24,7 +33,11 @@ function Logout() {
       window.location.reload();
     } catch (error) {
       console.log("Error in Logout", error);
-      toast.error("Error in logging out");
+      // Even if API call fails, clear local data and redirect
+      localStorage.removeItem("ChatApp");
+      Cookies.remove("jwt");
+      toast.success("Logged out successfully");
+      window.location.reload();
     }
   };
   
