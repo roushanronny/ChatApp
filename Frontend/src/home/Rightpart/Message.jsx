@@ -8,6 +8,7 @@ import Cookies from "js-cookie";
 import useConversation from "../../statemanage/useConversation";
 import { getToken } from "../../utils/getToken.js";
 import toast from "react-hot-toast";
+import { getApiUrl } from "../../config/api.js";
 
 function Message({ message }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -139,7 +140,7 @@ function Message({ message }) {
       
       console.log("🌐 Calling star API for message:", msg._id);
       const response = await axios.put(
-        `/api/message/star/${msg._id}`,
+        getApiUrl(`/api/message/star/${msg._id}`),
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -193,7 +194,7 @@ function Message({ message }) {
       
       console.log("🌐 Calling delete API for message:", msg._id);
       const response = await axios.delete(
-        `/api/message/delete/${msg._id}`,
+        getApiUrl(`/api/message/delete/${msg._id}`),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -251,7 +252,7 @@ function Message({ message }) {
       
       console.log("🌐 Calling react API for message:", targetMsg._id, "with emoji:", emoji);
       const response = await axios.put(
-        `/api/message/react/${targetMsg._id}`,
+        getApiUrl(`/api/message/react/${targetMsg._id}`),
         { emoji },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -288,7 +289,7 @@ function Message({ message }) {
     try {
       const token = Cookies.get("jwt");
       await axios.post(
-        `/api/message/forward/${message._id}`,
+        getApiUrl(`/api/message/forward/${message._id}`),
         { receiverIds },
         {
           headers: { Authorization: `Bearer ${token}` },

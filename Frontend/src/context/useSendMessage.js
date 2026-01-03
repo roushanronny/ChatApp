@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import useConversation from "../statemanage/useConversation.js";
 import axios from "axios";
+import { getApiUrl } from "../config/api.js";
 const useSendMessage = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessage, selectedConversation } = useConversation();
@@ -18,7 +19,7 @@ const useSendMessage = () => {
     try {
       console.log("Sending message:", { messageType, hasMedia: !!mediaUrl, mediaLength: mediaUrl?.length, replyTo });
       const res = await axios.post(
-        `/api/message/send/${selectedConversation._id}`,
+        getApiUrl(`/api/message/send/${selectedConversation._id}`),
         { 
           message: message || "",
           messageType,

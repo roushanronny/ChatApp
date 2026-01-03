@@ -24,7 +24,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         try {
           const token = Cookies.get("jwt");
           const response = await axios.post(
-            "/api/call/create",
+            getApiUrl("/api/call/create"),
             {
               receiverId: selectedConversation._id,
               callType,
@@ -95,7 +95,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         : 0;
       
       await axios.put(
-        `/api/call/update/${callIdRef.current}`,
+        getApiUrl(`/api/call/update/${callIdRef.current}`),
         { status, duration },
         {
           headers: {

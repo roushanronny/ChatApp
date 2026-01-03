@@ -3,6 +3,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import useConversation from "../../statemanage/useConversation";
+import { getApiUrl } from "../../config/api.js";
 
 function StarredView() {
   const [starredMessages, setStarredMessages] = useState([]);
@@ -17,7 +18,7 @@ function StarredView() {
   const fetchStarredMessages = async () => {
     try {
       const token = Cookies.get("jwt");
-      const response = await axios.get("/api/message/starred", {
+      const response = await axios.get(getApiUrl("/api/message/starred"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },

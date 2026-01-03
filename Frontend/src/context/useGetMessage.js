@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import useConversation from "../statemanage/useConversation.js";
 import axios from "axios";
+import { getApiUrl } from "../config/api.js";
 const useGetMessage = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessage, selectedConversation } = useConversation();
@@ -40,7 +41,7 @@ const useGetMessage = () => {
       
       try {
         const res = await axios.get(
-          `/api/message/get/${currentConversationId}`
+          getApiUrl(`/api/message/get/${currentConversationId}`)
         );
         // Only update if still on same conversation
         if (conversationIdRef.current === currentConversationId) {

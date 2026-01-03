@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaPhone, FaVideo, FaArrowDown, FaPlus, FaLink, FaKeyboard, FaCalendar } from "react-icons/fa";
 import { useAuth } from "../../context/AuthProvider";
 import { getToken } from "../../utils/getToken.js";
+import { getApiUrl } from "../../config/api.js";
 
 function CallsView() {
   const [calls, setCalls] = useState([]);
@@ -18,7 +19,7 @@ function CallsView() {
       const token = getToken();
       if (!token) return;
       
-      const response = await axios.get("/api/call/history", {
+      const response = await axios.get(getApiUrl("/api/call/history"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },

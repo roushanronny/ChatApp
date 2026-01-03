@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthProvider";
 import axios from "axios";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { getApiUrl } from "../config/api.js";
 
 function ContactInfoModal({ isOpen, onClose, contact }) {
   const { onlineUsers } = useSocketContext();
@@ -42,7 +43,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       
       console.log("Updating bio...", bio);
       const response = await axios.put(
-        "/api/user/updateBio",
+        getApiUrl("/api/user/updateBio"),
         { bio: bio.trim() },
         {
           headers: {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
 import { getToken } from "../utils/getToken.js";
+import { getApiUrl } from "../config/api.js";
 function useGetAllUsers() {
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ function useGetAllUsers() {
           setLoading(false);
           return;
         }
-        const response = await axios.get("/api/user/getUserProfile", {
+        const response = await axios.get(getApiUrl("/api/user/getUserProfile"), {
           credentials: "include",
           headers: {
             Authorization: `Bearer ${token}`,

@@ -6,6 +6,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import ChatContextMenu from "../../components/ChatContextMenu";
 import toast from "react-hot-toast";
+import { getApiUrl } from "../../config/api.js";
 
 function User({ user }) {
   const { selectedConversation, setSelectedConversation } = useConversation();
@@ -89,7 +90,7 @@ function User({ user }) {
           
           console.log("Updating profile picture...");
           const response = await axios.put(
-            "/api/user/updateProfilePicture",
+            getApiUrl("/api/user/updateProfilePicture"),
             { profilePicture: base64String },
             {
               headers: {
