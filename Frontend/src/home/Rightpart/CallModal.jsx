@@ -18,6 +18,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
+  const streamRef = useRef(null); // Store stream in ref to access in event handlers
   const callStartTimeRef = useRef(null);
   const callIdRef = useRef(null);
   const incomingOfferRef = useRef(null); // Store the incoming offer
@@ -307,6 +308,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         .getUserMedia(getMediaConstraints())
         .then((currentStream) => {
           setStream(currentStream);
+          streamRef.current = currentStream; // Store in ref for event handlers
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = currentStream;
             localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
@@ -397,38 +399,37 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       });
 
       socket.on("callEnded", () => {
-        console.log("📞 Call ended by remote party - cleaning up");
+        console.log("📞 Call ended by remote party - cleaning up immediately");
         
-        // Call ended by other party - end call immediately
-        setCallEnded(true);
-        
-        // Use current stream reference (need to access from closure)
-        const currentStream = stream;
+        // Use refs to get current values (not closure values)
+        const currentStream = streamRef.current;
         const currentPeerConnection = peerConnectionRef.current;
-        const currentCallAccepted = callAccepted;
+        const currentCallAccepted = callAccepted; // Will use state, but also check refs
         const currentCallId = callIdRef.current;
         
-        // Stop local stream
+        // Immediately stop all tracks
         if (currentStream) {
+          console.log("Stopping stream tracks");
           currentStream.getTracks().forEach((track) => {
             track.stop();
-            console.log("Stopped track:", track.kind);
+            console.log("✅ Stopped track:", track.kind, track.id);
           });
+          streamRef.current = null;
           setStream(null);
         }
         
         // Close peer connection
         if (currentPeerConnection) {
           try {
+            console.log("Closing peer connection");
             currentPeerConnection.close();
-            console.log("Peer connection closed");
+            peerConnectionRef.current = null;
           } catch (err) {
             console.error("Error closing peer connection:", err);
           }
-          peerConnectionRef.current = null;
         }
         
-        // Clear video refs
+        // Clear video refs immediately
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = null;
         }
@@ -443,20 +444,23 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
           );
         }
         
+        // Set call ended state immediately
+        setCallEnded(true);
+        setCallAccepted(false);
+        setIsIncomingCall(false);
+        
         toast.info("Call ended");
         
-        // Close modal after a short delay
+        // Close modal immediately
         setTimeout(() => {
-          console.log("Closing call modal after remote end");
+          console.log("✅ Closing call modal");
           onClose();
-          setCallAccepted(false);
           setCallEnded(false);
           setStream(null);
-          setIsIncomingCall(false);
           incomingOfferRef.current = null;
           callIdRef.current = null;
           callStartTimeRef.current = null;
-        }, 500);
+        }, 300);
       });
     }
 
@@ -511,6 +515,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       // Get user media
       const currentStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
       setStream(currentStream);
+      streamRef.current = currentStream; // Store in ref for event handlers
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = currentStream;
         localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
