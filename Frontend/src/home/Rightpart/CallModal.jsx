@@ -290,13 +290,15 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       setIsSpeakerOn(false);
       
       // If this is an incoming call (receiver), just store the offer and wait for user to accept
-      if (incomingCall && incomingCall.type === "offer") {
+      // Check if incomingCall has signalData with type "offer" (from Right.jsx handler)
+      if (incomingCall && incomingCall.signalData && incomingCall.signalData.type === "offer") {
         console.log("📞 Incoming call received - waiting for user to accept/reject");
+        console.log("Incoming call data:", incomingCall);
         
         // Update call type
         setCurrentCallType(callType || incomingCall.callType || "video");
         setIsIncomingCall(true);
-        incomingOfferRef.current = incomingCall; // Store the offer for later
+        incomingOfferRef.current = incomingCall.signalData; // Store the offer SDP (not the whole object)
         
         // Save call to history as missed (will update to answered if accepted)
         const saveCall = async () => {
@@ -595,7 +597,8 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       if (socket) {
         socket.off("callAccepted");
         socket.off("callUser");
-        socket.off("callEnded");
+        socket.off("iceCandidate");
+        socket.off("callEnded", handleCallEnded);
         console.log("✅ Removed all socket listeners");
       }
     };

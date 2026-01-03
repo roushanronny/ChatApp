@@ -46,15 +46,27 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Call events
+  // Call events - For offer/answer SDP exchange
   socket.on("callUser", ({ to, signalData, from, name, callType }) => {
     const receiverSocketId = getReceiverSocketId(to);
-    console.log("Call event received:", { to, from, name, callType, receiverSocketId });
+    console.log("Call event received (offer/answer):", { to, from, name, callType, receiverSocketId, signalType: signalData?.type });
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("callUser", { signalData, from, name, callType });
       console.log("Call forwarded to:", receiverSocketId);
     } else {
       console.log("Receiver not online:", to);
+    }
+  });
+
+  // ICE candidate exchange (separate from offer/answer)
+  socket.on("iceCandidate", ({ to, candidate, from }) => {
+    const receiverSocketId = getReceiverSocketId(to);
+    console.log("ICE candidate received:", { to, from, receiverSocketId });
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("iceCandidate", { candidate, from });
+      console.log("ICE candidate forwarded to:", receiverSocketId);
+    } else {
+      console.log("Receiver not online for ICE candidate:", to);
     }
   });
 
