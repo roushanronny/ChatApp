@@ -395,37 +395,66 @@ function Typesend() {
     }
   };
 
-  const stopRecording = () => {
-    if (!mediaRecorderRef.current || !isRecording) {
+  const stopRecording = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    console.log("Stop button clicked, isRecording:", isRecording, "recorder state:", mediaRecorderRef.current?.state);
+    
+    if (!isRecording) {
+      console.log("Not recording, nothing to stop");
       return;
     }
 
-    try {
-      console.log("Stop button clicked, stopping recording...");
-      
-      // Clear interval first
+    if (!mediaRecorderRef.current) {
+      console.log("No recorder ref, cleaning up state");
+      setIsRecording(false);
+      setRecordingDuration(0);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
+      return;
+    }
+
+    try {
+      // Clear interval first to stop timer
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+        console.log("Recording interval cleared");
+      }
       
       // Stop the recorder if it's recording
-      if (mediaRecorderRef.current.state === "recording") {
+      const recorderState = mediaRecorderRef.current.state;
+      console.log("Recorder state:", recorderState);
+      
+      if (recorderState === "recording") {
+        console.log("Stopping MediaRecorder...");
         mediaRecorderRef.current.stop();
-        console.log("Recording stopped by user - MediaRecorder.stop() called");
-      } else if (mediaRecorderRef.current.state === "inactive") {
+        console.log("MediaRecorder.stop() called - waiting for onstop handler");
+        // Don't set isRecording to false here - let onstop handler do it
+      } else if (recorderState === "inactive") {
         // Already stopped, just clean up
-        console.log("Recording already stopped, cleaning up...");
+        console.log("Recording already stopped, cleaning up state...");
         setIsRecording(false);
         setRecordingDuration(0);
         
         // Stop any tracks
         if (mediaRecorderRef.current.stream) {
-          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+          mediaRecorderRef.current.stream.getTracks().forEach(track => {
+            track.stop();
+            console.log("Track stopped");
+          });
         }
+      } else {
+        // Paused or other state
+        console.log("Recorder in unexpected state:", recorderState);
+        setIsRecording(false);
+        setRecordingDuration(0);
       }
-      
-      // onstop handler will take care of the rest
     } catch (error) {
       console.error("Error stopping recording:", error);
       setIsRecording(false);
@@ -436,8 +465,12 @@ function Typesend() {
       }
       
       // Try to stop tracks manually if recorder fails
-      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (cleanupError) {
+        console.error("Error cleaning up tracks:", cleanupError);
       }
     }
   };
