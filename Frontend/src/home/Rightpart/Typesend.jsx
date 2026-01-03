@@ -118,17 +118,46 @@ function Typesend() {
 
   const handleFileSelect = (e, type) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.log("No file selected");
+      return;
+    }
+
+    console.log("File selected:", file.name, file.type, file.size);
+
+    // Auto-detect file type if not provided
+    let detectedType = type;
+    if (!type || type === "file") {
+      if (file.type.startsWith("image/")) {
+        detectedType = "image";
+      } else if (file.type.startsWith("video/")) {
+        detectedType = "video";
+      } else if (file.type.startsWith("audio/")) {
+        detectedType = "audio";
+      } else {
+        detectedType = "file";
+      }
+    }
 
     setSelectedFile(file);
-    setFileType(type);
+    setFileType(detectedType);
 
-    if (type === "image" || type === "video") {
+    // Create preview for images and videos
+    if (detectedType === "image" || detectedType === "video") {
       const reader = new FileReader();
       reader.onloadend = () => {
         setFilePreview(reader.result);
+        console.log("File preview created for:", detectedType);
+      };
+      reader.onerror = (error) => {
+        console.error("Error reading file:", error);
+        toast.error("Error reading file");
       };
       reader.readAsDataURL(file);
+    } else {
+      // For files and audio, set a placeholder or file name
+      setFilePreview(null);
+      console.log("File type:", detectedType, "No preview needed");
     }
   };
 
@@ -139,19 +168,32 @@ function Typesend() {
       return;
     }
 
+    if (!selectedConversation) {
+      toast.error("Please select a conversation");
+      return;
+    }
+
     try {
       if (selectedFile || filePreview) {
         let base64ToSend = filePreview;
         
         // If no preview but file is selected, read it
         if (!base64ToSend && selectedFile) {
+          console.log("Reading file as base64:", selectedFile.name, selectedFile.type);
           const reader = new FileReader();
-          reader.onloadend = () => {
-            base64ToSend = reader.result;
-            sendFileMessage(base64ToSend);
+          reader.onloadend = async () => {
+            try {
+              base64ToSend = reader.result;
+              console.log("File read successfully, length:", base64ToSend?.length);
+              await sendFileMessage(base64ToSend);
+            } catch (error) {
+              console.error("Error in sendFileMessage:", error);
+              toast.error("Failed to send file: " + (error.response?.data?.error || error.message));
+            }
           };
-          reader.onerror = () => {
-            console.error("Error reading file");
+          reader.onerror = (error) => {
+            console.error("Error reading file:", error);
+            toast.error("Error reading file");
           };
           reader.readAsDataURL(selectedFile);
           return; // Return early, will continue in reader.onloadend
@@ -159,7 +201,10 @@ function Typesend() {
         
         // Send if we have the data
         if (base64ToSend) {
+          console.log("Sending file with preview, type:", fileType);
           await sendFileMessage(base64ToSend);
+        } else {
+          toast.error("No file data to send");
         }
       } else if (message.trim()) {
         await sendMessages(message, "text", "", replyTo?._id);
@@ -175,13 +220,33 @@ function Typesend() {
       }
     } catch (error) {
       console.error("Error in handleSubmit:", error);
+      toast.error("Failed to send: " + (error.response?.data?.error || error.message));
     }
   };
 
   const sendFileMessage = async (base64Data) => {
+    if (!base64Data) {
+      toast.error("No file data to send");
+      return;
+    }
+
+    if (!selectedConversation) {
+      toast.error("Please select a conversation");
+      return;
+    }
+
     try {
       console.log("Sending file:", fileType, "Length:", base64Data?.length);
+      
+      // Validate base64 data
+      if (base64Data.length < 100) {
+        toast.error("File data is too small or invalid");
+        return;
+      }
+
       await sendMessages("", fileType, base64Data, replyTo?._id);
+      
+      toast.success(`${fileType === "image" ? "Image" : fileType === "video" ? "Video" : fileType === "audio" ? "Audio" : "File"} sent successfully`);
       
       // Reset file state
       setSelectedFile(null);
@@ -191,10 +256,10 @@ function Typesend() {
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (mediaInputRef.current) mediaInputRef.current.value = "";
       if (generalFileInputRef.current) generalFileInputRef.current.value = "";
-      
-      // File sent successfully - no toast needed
     } catch (error) {
       console.error("Error sending file:", error);
+      toast.error("Failed to send file: " + (error.response?.data?.error || error.message));
+      throw error; // Re-throw to handle in handleSubmit
     }
   };
 
@@ -211,41 +276,123 @@ function Typesend() {
   };
 
   const startRecording = async () => {
+    if (!selectedConversation) {
+      toast.error("Please select a conversation");
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      console.log("Requesting microphone access...");
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        } 
+      });
+      
+      console.log("Microphone access granted");
+      
+      // Check if MediaRecorder is supported
+      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+        console.warn("audio/webm not supported, trying default");
+      }
+      
+      const options = { mimeType: "audio/webm" };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        // Fallback to default
+        delete options.mimeType;
+      }
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+          console.log("Audio chunk received:", event.data.size, "bytes");
+        }
       };
 
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            await sendMessages("", "audio", reader.result);
-            // Voice message sent successfully
-          } catch (error) {
-            console.error("Error sending audio:", error);
-          }
-        };
-        reader.readAsDataURL(audioBlob);
+      mediaRecorderRef.current.onerror = (error) => {
+        console.error("MediaRecorder error:", error);
+        toast.error("Error recording audio");
+        setIsRecording(false);
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.onstop = async () => {
+        console.log("Recording stopped, chunks:", audioChunksRef.current.length);
+        
+        if (audioChunksRef.current.length === 0) {
+          toast.error("No audio recorded");
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          console.log("Audio blob created:", audioBlob.size, "bytes");
+          
+          if (audioBlob.size < 100) {
+            toast.error("Recording too short");
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            try {
+              console.log("Sending audio message, base64 length:", reader.result?.length);
+              await sendMessages("", "audio", reader.result);
+              toast.success("Voice message sent");
+            } catch (error) {
+              console.error("Error sending audio:", error);
+              toast.error("Failed to send voice message: " + (error.response?.data?.error || error.message));
+            }
+          };
+          reader.onerror = (error) => {
+            console.error("Error reading audio blob:", error);
+            toast.error("Error processing audio");
+          };
+          reader.readAsDataURL(audioBlob);
+        } catch (error) {
+          console.error("Error creating audio blob:", error);
+          toast.error("Error processing audio");
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start(100); // Collect data every 100ms
       setIsRecording(true);
+      console.log("Recording started");
+      toast.success("Recording...");
     } catch (error) {
       console.error("Error accessing microphone:", error);
+      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+        toast.error("Microphone permission denied. Please allow microphone access.");
+      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+        toast.error("No microphone found");
+      } else {
+        toast.error("Error accessing microphone: " + error.message);
+      }
+      setIsRecording(false);
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      try {
+        if (mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+          console.log("Recording stopped");
+        }
+        setIsRecording(false);
+      } catch (error) {
+        console.error("Error stopping recording:", error);
+        setIsRecording(false);
+      }
     }
   };
 
@@ -301,18 +448,30 @@ function Typesend() {
         </div>
       )}
 
-      {filePreview && (
+      {(filePreview || selectedFile) && (
         <div className="relative bg-[#202C33] p-3 mx-3 mb-2 rounded-lg border border-[#313D45]">
           <button
             onClick={removeFile}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 z-10"
           >
             ×
           </button>
-          {fileType === "image" ? (
-            <img src={filePreview} alt="Preview" className="max-h-40 rounded-lg" />
-          ) : fileType === "video" ? (
-            <video src={filePreview} className="max-h-40 rounded-lg" controls />
+          {filePreview && fileType === "image" ? (
+            <img src={filePreview} alt="Preview" className="max-h-40 rounded-lg w-full object-contain" />
+          ) : filePreview && fileType === "video" ? (
+            <video src={filePreview} className="max-h-40 rounded-lg w-full" controls />
+          ) : selectedFile ? (
+            <div className="flex items-center space-x-3 p-2">
+              <div className="w-12 h-12 bg-[#313D45] rounded-lg flex items-center justify-center">
+                <FaFile className="text-2xl text-[#8696A0]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{selectedFile.name}</p>
+                <p className="text-[#8696A0] text-xs">
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            </div>
           ) : null}
         </div>
       )}
@@ -390,14 +549,18 @@ function Typesend() {
             </button>
           </div>
           
-          {(message || selectedFile || filePreview) ? (
+          {(message || selectedFile || filePreview || isRecording) ? (
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isRecording}
               className="p-3 text-[#8696A0] hover:bg-[#313D45] rounded-full transition disabled:opacity-50"
-              title="Send"
+              title={isRecording ? "Recording..." : "Send"}
             >
-              <IoSend className="text-xl" />
+              {isRecording ? (
+                <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <IoSend className="text-xl" />
+              )}
             </button>
           ) : (
             <button
@@ -405,6 +568,8 @@ function Typesend() {
               onMouseDown={handleMicMouseDown}
               onMouseUp={handleMicMouseUp}
               onMouseLeave={handleMicMouseUp}
+              onTouchStart={handleMicMouseDown}
+              onTouchEnd={handleMicMouseUp}
               className={`p-3 rounded-full transition ${
                 isRecording 
                   ? "bg-red-500 text-white animate-pulse" 
