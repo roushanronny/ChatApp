@@ -373,6 +373,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       // Listen for call acceptance with answer signal
       socket.on("callAccepted", async ({ signal, from }) => {
         try {
+          console.log("✅ Call accepted by receiver, setting remote description");
           setCallAccepted(true);
           
           // Set remote description (answer) if not already set
@@ -380,7 +381,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             const remoteDesc = new RTCSessionDescription(signal);
             if (peerConnectionRef.current.remoteDescription === null) {
               await peerConnectionRef.current.setRemoteDescription(remoteDesc);
-              console.log("Remote description (answer) set");
+              console.log("✅ Remote description (answer) set by caller");
             }
           }
           
@@ -389,7 +390,17 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             await updateCallStatus("answered");
           }
           
-          console.log("Call accepted and connected");
+          // Ensure local video is displayed in PIP
+          setTimeout(() => {
+            if (localVideoRef.current && (streamRef.current || stream)) {
+              const videoStream = streamRef.current || stream;
+              localVideoRef.current.srcObject = videoStream;
+              localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+              console.log("✅ Local video set for PIP");
+            }
+          }, 100);
+          
+          console.log("✅ Call accepted and connected - waiting for remote stream");
         } catch (error) {
           console.error("Error accepting call:", error);
           toast.error("Error accepting call");
