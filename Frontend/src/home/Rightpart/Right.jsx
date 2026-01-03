@@ -33,8 +33,7 @@ function Right() {
       if (signalData && signalData.type === "offer") {
         console.log("Incoming call offer detected, opening CallModal");
         
-        // Find the caller user
-        const [allUsers] = useGetAllUsers();
+        // Find the caller user from allUsers (already loaded)
         const caller = allUsers.find(u => u._id === from) || { _id: from, fullname: name || "Unknown" };
         
         // Store incoming call info
