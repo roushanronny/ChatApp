@@ -400,12 +400,18 @@ export const exportChat = async (req, res) => {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
     
+    // Get receiver info for export
+    const User = (await import("../models/user.model.js")).default;
+    const receiver = await User.findById(receiverId).select("fullname");
+    const receiverName = receiver?.fullname || "Unknown";
+    
     const conversation = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
     }).populate({
       path: "messages",
       populate: [
         { path: "senderId", select: "fullname" },
+        { path: "receiverId", select: "fullname" },
       ],
     });
     
@@ -418,17 +424,29 @@ export const exportChat = async (req, res) => {
     // Generate chat export text
     let chatText = `WhatsApp Chat Export\n`;
     chatText += `========================\n\n`;
-    chatText += `Conversation with: ${messages[0]?.receiverId?.fullname || "Unknown"}\n`;
+    chatText += `Conversation with: ${receiverName}\n`;
     chatText += `Exported on: ${new Date().toLocaleString()}\n\n`;
-    chatText += `Messages:\n`;
+    chatText += `Messages (${messages.length}):\n`;
     chatText += `========================\n\n`;
     
     messages.forEach(msg => {
       const date = new Date(msg.createdAt).toLocaleString();
       const senderName = msg.senderId?.fullname || "Unknown";
-      const messageContent = msg.messageType === "text" 
-        ? msg.message 
-        : `[${msg.messageType.toUpperCase()}] ${msg.message || "Media"}`;
+      let messageContent = "";
+      
+      if (msg.messageType === "text") {
+        messageContent = msg.message || "[No message]";
+      } else if (msg.messageType === "image") {
+        messageContent = `[Image] ${msg.message || ""}`;
+      } else if (msg.messageType === "video") {
+        messageContent = `[Video] ${msg.message || ""}`;
+      } else if (msg.messageType === "audio") {
+        messageContent = `[Audio] ${msg.message || ""}`;
+      } else if (msg.messageType === "file") {
+        messageContent = `[File] ${msg.message || ""}`;
+      } else {
+        messageContent = `[${msg.messageType.toUpperCase()}] ${msg.message || "Media"}`;
+      }
       
       chatText += `${date} - ${senderName}:\n`;
       chatText += `${messageContent}\n\n`;
@@ -436,7 +454,7 @@ export const exportChat = async (req, res) => {
     
     // Set headers for file download
     res.setHeader('Content-Type', 'text/plain');
-    res.setHeader('Content-Disposition', `attachment; filename="chat-export-${Date.now()}.txt"`);
+    res.setHeader('Content-Disposition', `attachment; filename="chat-export-${receiverName}-${Date.now()}.txt"`);
     res.status(200).send(chatText);
   } catch (error) {
     console.log("Error in exportChat", error);
