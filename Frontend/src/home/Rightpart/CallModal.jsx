@@ -157,6 +157,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                 name: authUser?.user?.fullname,
                 callType: callType
               });
+              console.log("Call offer sent");
             })
             .catch((err) => {
               console.error("Error creating offer:", err);
@@ -173,11 +174,13 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         try {
           setCallAccepted(true);
           
-          // Set remote description (answer)
+          // Set remote description (answer) if not already set
           if (peerConnectionRef.current && signal) {
-            await peerConnectionRef.current.setRemoteDescription(
-              new RTCSessionDescription(signal)
-            );
+            const remoteDesc = new RTCSessionDescription(signal);
+            if (peerConnectionRef.current.remoteDescription === null) {
+              await peerConnectionRef.current.setRemoteDescription(remoteDesc);
+              console.log("Remote description (answer) set");
+            }
           }
           
           // Update call status to answered
@@ -192,7 +195,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         }
       });
 
-      // Listen for ICE candidates from remote peer
+      // Listen for ICE candidates and other signals from remote peer
       socket.on("callUser", async ({ signalData, from, callType: remoteCallType }) => {
         if (signalData && peerConnectionRef.current) {
           try {
@@ -201,11 +204,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
               await peerConnectionRef.current.addIceCandidate(
                 new RTCIceCandidate(signalData)
               );
-            }
-            // If it's an offer (when receiving a call)
-            else if (signalData.type === "offer") {
-              // This would be handled in a separate incoming call handler
-              // For now, we assume this modal is only for outgoing calls
+              console.log("ICE candidate added");
             }
           } catch (error) {
             console.error("Error handling signal:", error);
