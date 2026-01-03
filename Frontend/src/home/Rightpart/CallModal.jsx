@@ -832,26 +832,6 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                       </div>
                     </div>
                   )}
-                  
-                  {/* Local video as PIP when call is accepted */}
-                  {callAccepted && !callEnded && (
-                    <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45] z-10">
-                      <video
-                        key={`local-${streamRef.current?.id || stream?.id || 'video'}`}
-                        ref={localVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                        onLoadedMetadata={() => {
-                          console.log("Local PIP video metadata loaded");
-                          if (localVideoRef.current) {
-                            localVideoRef.current.play().catch(err => console.error("Error playing local PIP video:", err));
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
