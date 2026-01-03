@@ -71,17 +71,21 @@ Railway automatically deploy start कर देगा। Deployment complete �
 Vercel dashboard में **Environment Variables** section में add करें:
 
 ```
-VITE_API_URL=https://your-railway-app.up.railway.app
-VITE_SOCKET_URL=https://your-railway-app.up.railway.app
+VITE_API_URL=https://chatapp-production-810e.up.railway.app
+VITE_SOCKET_URL=https://chatapp-production-810e.up.railway.app
 ```
 
 **Important:** 
 - Railway का backend URL यहाँ add करें (Step 1.4 में मिला था)
 - **HTTP नहीं, HTTPS URL use करें**
 - URL के अंत में `/` (slash) नहीं होना चाहिए
-- Example: `https://chat-app-production.up.railway.app` ✅
-- Wrong: `http://chat-app-production.up.railway.app` ❌
-- Wrong: `https://chat-app-production.up.railway.app/` ❌
+- Example: `https://chatapp-production-810e.up.railway.app` ✅
+- Wrong: `http://chatapp-production-810e.up.railway.app` ❌
+- Wrong: `https://chatapp-production-810e.up.railway.app/` ❌
+
+**आपके लिए exact values:**
+- `VITE_API_URL=https://chatapp-production-810e.up.railway.app`
+- `VITE_SOCKET_URL=https://chatapp-production-810e.up.railway.app`
 
 ### 2.3 Deploy
 
@@ -92,11 +96,18 @@ VITE_SOCKET_URL=https://your-railway-app.up.railway.app
 ### 2.4 Railway में Frontend URL Update करें
 
 1. Railway dashboard पर वापस जाएं
-2. **Variables** tab में `FRONTEND_URL` को update करें:
+2. **Variables** tab में `FRONTEND_URL` को add करें:
    ```
    FRONTEND_URL=https://your-app.vercel.app
    ```
+   (Vercel deployment के बाद यह URL update करें)
 3. Railway automatically redeploy होगा
+
+**अभी के लिए Railway Variables:**
+- `MONGODB_URI` = आपका MongoDB connection string
+- `JWT_TOKEN` = आपका secret key
+- `PORT` = 5004
+- `FRONTEND_URL` = Vercel URL (Step 2.3 के बाद add करें)
 
 ---
 
