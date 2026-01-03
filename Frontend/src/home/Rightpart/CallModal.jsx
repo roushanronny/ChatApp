@@ -76,17 +76,33 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
           audio: false
         });
         const videoTrack = videoStream.getVideoTracks()[0];
+        
+        // Add video track to existing stream
         stream.addTrack(videoTrack);
+        
+        // Update video element immediately
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+          // Force update by reassigning stream
+          localVideoRef.current.srcObject = null;
+          setTimeout(() => {
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+              localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+            }
+          }, 100);
         }
+        
         // Add video track to peer connection
         if (peerConnectionRef.current) {
           peerConnectionRef.current.addTrack(videoTrack, stream);
         }
+        
+        // Clean up unused tracks
         videoStream.getTracks().forEach(track => {
           if (track !== videoTrack) track.stop();
         });
+        
+        console.log("Video track added, stream has video:", stream.getVideoTracks().length > 0);
       } else {
         // Switch to audio: remove video track
         const videoTracks = stream.getVideoTracks();
@@ -102,8 +118,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
             }
           }
         });
+        
+        // Clear video element
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.srcObject = null;
         }
       }
       
