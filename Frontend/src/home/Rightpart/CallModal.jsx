@@ -398,21 +398,23 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         // If we receive an offer but modal is not open, it will be handled by global handler in Right.jsx
       });
 
-      socket.on("callEnded", () => {
-        console.log("📞 Call ended by remote party - cleaning up immediately");
+      // Handle call end from remote party - MUST be defined before other handlers
+      const handleCallEnded = () => {
+        console.log("📞📞📞 CALL ENDED EVENT RECEIVED - cleaning up immediately");
         
-        // Use refs to get current values (not closure values)
+        // Use refs to get current values (not stale closure values)
         const currentStream = streamRef.current;
         const currentPeerConnection = peerConnectionRef.current;
-        const currentCallAccepted = callAccepted; // Will use state, but also check refs
         const currentCallId = callIdRef.current;
         
         // Immediately stop all tracks
         if (currentStream) {
-          console.log("Stopping stream tracks");
+          console.log("🛑 Stopping all stream tracks");
           currentStream.getTracks().forEach((track) => {
-            track.stop();
-            console.log("✅ Stopped track:", track.kind, track.id);
+            if (track.readyState !== 'ended') {
+              track.stop();
+              console.log("✅ Stopped track:", track.kind, track.id);
+            }
           });
           streamRef.current = null;
           setStream(null);
@@ -421,8 +423,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         // Close peer connection
         if (currentPeerConnection) {
           try {
-            console.log("Closing peer connection");
-            currentPeerConnection.close();
+            console.log("🔌 Closing peer connection");
+            if (currentPeerConnection.connectionState !== 'closed') {
+              currentPeerConnection.close();
+            }
             peerConnectionRef.current = null;
           } catch (err) {
             console.error("Error closing peer connection:", err);
@@ -432,14 +436,20 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         // Clear video refs immediately
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = null;
+          try {
+            localVideoRef.current.pause();
+          } catch (e) {}
         }
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = null;
+          try {
+            remoteVideoRef.current.pause();
+          } catch (e) {}
         }
         
         // Update call status
         if (currentCallId) {
-          updateCallStatus(currentCallAccepted ? "answered" : "missed").catch(err => 
+          updateCallStatus(callAccepted ? "answered" : "missed").catch(err => 
             console.error("Error updating call status:", err)
           );
         }
@@ -449,36 +459,62 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         setCallAccepted(false);
         setIsIncomingCall(false);
         
-        toast.info("Call ended");
+        toast.info("Call ended by other party");
         
-        // Close modal immediately
+        // Close modal immediately - no delay
+        console.log("✅ Closing call modal immediately");
         setTimeout(() => {
-          console.log("✅ Closing call modal");
           onClose();
+          // Reset all states
           setCallEnded(false);
           setStream(null);
+          setIsIncomingCall(false);
+          setCallAccepted(false);
           incomingOfferRef.current = null;
           callIdRef.current = null;
           callStartTimeRef.current = null;
-        }, 300);
-      });
+          streamRef.current = null;
+        }, 100);
+      };
+
+      socket.on("callEnded", handleCallEnded);
     }
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      console.log("🧹 Cleaning up CallModal useEffect");
+      
+      // Stop stream
+      const currentStream = streamRef.current || stream;
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => {
+          if (track.readyState !== 'ended') {
+            track.stop();
+          }
+        });
+        streamRef.current = null;
       }
+      
+      // Close peer connection
       if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
+        try {
+          if (peerConnectionRef.current.connectionState !== 'closed') {
+            peerConnectionRef.current.close();
+          }
+        } catch (e) {
+          console.error("Error closing peer connection on cleanup:", e);
+        }
         peerConnectionRef.current = null;
       }
+      
+      // Remove all socket listeners
       if (socket) {
         socket.off("callAccepted");
         socket.off("callUser");
         socket.off("callEnded");
+        console.log("✅ Removed all socket listeners");
       }
     };
-  }, [isOpen, socket, selectedConversation, callType, incomingCall]);
+  }, [isOpen, socket, selectedConversation, callType, incomingCall, callAccepted]);
 
   const updateCallStatus = async (status) => {
     if (!callIdRef.current) return;
@@ -581,18 +617,29 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   };
 
   const handleEndCall = async () => {
-    console.log("📞 Ending call...");
+    console.log("📞 User ending call - performing cleanup");
+    
+    // Prevent multiple calls
+    if (callEnded) {
+      console.log("Call already ended, skipping");
+      return;
+    }
     
     // Use refs to ensure we're stopping the correct stream
     const currentStream = streamRef.current || stream;
     const currentPeerConnection = peerConnectionRef.current;
     
+    // Set ended state first to prevent other operations
+    setCallEnded(true);
+    
     // Stop local stream
     if (currentStream) {
-      console.log("Stopping all stream tracks");
+      console.log("🛑 Stopping all stream tracks");
       currentStream.getTracks().forEach((track) => {
-        track.stop();
-        console.log("✅ Stopped track:", track.kind, track.id);
+        if (track.readyState !== 'ended') {
+          track.stop();
+          console.log("✅ Stopped track:", track.kind, track.id);
+        }
       });
       streamRef.current = null;
       setStream(null);
@@ -601,8 +648,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
     // Close peer connection
     if (currentPeerConnection) {
       try {
-        console.log("Closing peer connection");
-        currentPeerConnection.close();
+        console.log("🔌 Closing peer connection");
+        if (currentPeerConnection.connectionState !== 'closed') {
+          currentPeerConnection.close();
+        }
         peerConnectionRef.current = null;
       } catch (err) {
         console.error("Error closing peer connection:", err);
@@ -612,13 +661,16 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
     // Clear video refs
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+      try {
+        localVideoRef.current.pause();
+      } catch (e) {}
     }
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
+      try {
+        remoteVideoRef.current.pause();
+      } catch (e) {}
     }
-    
-    // Set state
-    setCallEnded(true);
     
     // Update call status
     if (callIdRef.current) {
@@ -629,25 +681,32 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       }
     }
     
-    // Notify other party (only if we're ending the call, not if they already ended it)
-    if (socket && selectedConversation) {
-      console.log("📤 Notifying other party that call ended");
-      socket.emit("endCall", { to: selectedConversation._id });
+    // Notify other party that we're ending the call
+    if (socket && selectedConversation && !callEnded) {
+      console.log("📤 Notifying other party that call ended, receiverId:", selectedConversation._id);
+      try {
+        socket.emit("endCall", { to: selectedConversation._id });
+        console.log("✅ endCall event emitted");
+      } catch (err) {
+        console.error("Error emitting endCall:", err);
+      }
     }
     
-    // Close modal after a short delay
+    // Reset states
+    setCallAccepted(false);
+    setIsIncomingCall(false);
+    
+    // Close modal immediately
     setTimeout(() => {
       console.log("✅ Closing call modal");
       onClose();
-      setCallAccepted(false);
       setCallEnded(false);
       setStream(null);
-      setIsIncomingCall(false);
       incomingOfferRef.current = null;
       callIdRef.current = null;
       callStartTimeRef.current = null;
       streamRef.current = null;
-    }, 300);
+    }, 100);
   };
 
   if (!isOpen) return null;

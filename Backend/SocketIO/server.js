@@ -67,8 +67,12 @@ io.on("connection", (socket) => {
 
   socket.on("endCall", ({ to }) => {
     const receiverSocketId = getReceiverSocketId(to);
+    console.log("endCall received:", { to, receiverSocketId, allUsers: Object.keys(users) });
     if (receiverSocketId) {
+      console.log("Forwarding callEnded to:", receiverSocketId);
       io.to(receiverSocketId).emit("callEnded");
+    } else {
+      console.log("Receiver not found for endCall, userId:", to);
     }
   });
 
