@@ -9,7 +9,7 @@ function Left() {
   const { setActiveView } = useView();
   
   return (
-    <div className="w-[30%] bg-[#111B21] text-gray-300 flex flex-col h-screen border-r border-[#313D45]">
+    <div className="w-[30%] bg-[#111B21] text-gray-300 flex flex-col h-screen border-r border-[#313D45] overflow-hidden">
       <div className="bg-[#202C33] px-4 py-3">
         <h1 className="font-semibold text-lg text-white">Chats</h1>
       </div>
@@ -56,7 +56,7 @@ function Left() {
           Groups
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <Users activeTab={activeTab} />
       </div>
       {/* Archived Button */}

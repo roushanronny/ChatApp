@@ -16,7 +16,7 @@ function Right() {
   }, [selectedConversation?._id]);
 
   return (
-    <div className="w-full bg-[#0B141A] text-gray-300 flex flex-col h-screen">
+    <div className="w-full bg-[#0B141A] text-gray-300 flex flex-col h-screen overflow-hidden">
       {!selectedConversation ? (
         <NoChatSelected />
       ) : (

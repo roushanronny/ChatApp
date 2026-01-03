@@ -19,7 +19,7 @@ function MainLayout() {
   const { activeView } = useView();
   
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Logout />
       {activeView === "chats" && (
         <>

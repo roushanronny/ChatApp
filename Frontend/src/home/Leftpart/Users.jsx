@@ -33,7 +33,7 @@ function Users({ activeTab = "all" }) {
   }
   
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden">
       {filteredUsers.length > 0 ? (
         filteredUsers.map((user, index) => (
           <User key={user._id || index} user={user} />
