@@ -878,8 +878,8 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             </div>
           )}
 
-          {/* Call Controls Bar - Show when call is accepted or outgoing */}
-          {!isIncomingCall && !callEnded && (
+          {/* Call Controls Bar - Show when call is accepted or outgoing (but not ended) */}
+          {!isIncomingCall && !callEnded && callAccepted && (
             <div className={`${currentCallType === "video" ? "absolute bottom-0 left-0 right-0" : ""} bg-[#111B21] rounded-lg px-6 py-4 flex items-center justify-between ${currentCallType === "video" ? "mx-4 mb-4" : ""}`}>
             {/* Speaker Button */}
             <button
