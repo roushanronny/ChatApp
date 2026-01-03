@@ -529,17 +529,20 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
           } catch (e) {}
         }
         
-        // Update call status
-        if (currentCallId) {
-          updateCallStatus(callAccepted ? "answered" : "missed").catch(err => 
-            console.error("Error updating call status:", err)
-          );
-        }
+        // Capture current accepted state before updating
+        const isCurrentlyAccepted = callAccepted;
         
-        // Set call ended state immediately
+        // Set call ended state immediately (before async operations)
         setCallEnded(true);
         setCallAccepted(false);
         setIsIncomingCall(false);
+        
+        // Update call status
+        if (currentCallId) {
+          updateCallStatus(isCurrentlyAccepted ? "answered" : "missed").catch(err => 
+            console.error("Error updating call status:", err)
+          );
+        }
         
         toast.info("Call ended by other party");
         
