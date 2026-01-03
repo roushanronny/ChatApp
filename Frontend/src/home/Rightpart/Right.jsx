@@ -16,6 +16,7 @@ function Right() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [showIncomingCallModal, setShowIncomingCallModal] = useState(false);
   const incomingCallRef = useRef(null);
+  const [allUsers] = useGetAllUsers(); // Get all users at top level
 
   // Reset search when conversation changes
   useEffect(() => {
@@ -27,14 +28,14 @@ function Right() {
     if (!socket) return;
 
     const handleIncomingCall = async ({ signalData, from, name, callType }) => {
-      console.log("Global incoming call handler:", { from, name, callType, hasOffer: signalData?.type === "offer" });
+      console.log("🔔 Global incoming call handler:", { from, name, callType, hasOffer: signalData?.type === "offer", signalData });
       
       // Check if this is a call offer (RTCSessionDescription with type "offer")
       if (signalData && signalData.type === "offer") {
-        console.log("Incoming call offer detected, opening CallModal");
+        console.log("✅ Incoming call offer detected, opening CallModal");
         
-        // Find the caller user from allUsers (already loaded)
-        const caller = allUsers.find(u => u._id === from) || { _id: from, fullname: name || "Unknown" };
+        // Find the caller user from allUsers
+        const caller = allUsers.find(u => u._id === from) || { _id: from, fullname: name || "Unknown", profilePicture: "" };
         
         // Store incoming call info
         incomingCallRef.current = {
@@ -52,6 +53,10 @@ function Right() {
         if (!selectedConversation || selectedConversation._id !== from) {
           setSelectedConversation(caller);
         }
+        
+        console.log("📞 CallModal should open now with:", incomingCallRef.current);
+      } else {
+        console.log("⚠️ Received callUser event but not an offer:", signalData);
       }
     };
 
@@ -60,7 +65,7 @@ function Right() {
     return () => {
       socket.off("callUser", handleIncomingCall);
     };
-  }, [socket, selectedConversation, setSelectedConversation]);
+  }, [socket, selectedConversation, setSelectedConversation, allUsers]);
 
   return (
     <div className="w-full bg-[#0B141A] text-gray-300 flex flex-col h-screen overflow-hidden">

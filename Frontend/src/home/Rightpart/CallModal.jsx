@@ -374,14 +374,16 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             })
             .then(() => {
               // Send offer to receiver via socket
-              socket.emit("callUser", {
+              const offerData = {
                 to: selectedConversation._id,
                 signalData: peerConnectionRef.current.localDescription,
                 from: authUser?.user?._id,
                 name: authUser?.user?.fullname,
                 callType: callType
-              });
-              console.log("Call offer sent to:", selectedConversation._id);
+              };
+              console.log("📤 Sending call offer:", offerData);
+              socket.emit("callUser", offerData);
+              console.log("✅ Call offer sent to:", selectedConversation._id);
             })
             .catch((err) => {
               console.error("Error creating offer:", err);
