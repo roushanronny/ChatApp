@@ -155,16 +155,18 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
             <div className="relative w-full h-full bg-[#111B21] rounded-lg overflow-hidden min-h-[400px]">
               {stream ? (
                 <>
-                  {/* Remote video (main) */}
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                    style={{ display: callAccepted ? 'block' : 'none' }}
-                  />
-                  {/* Local video (picture-in-picture) */}
-                  <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45]">
+                  {/* Remote video (main) - only show when call is accepted */}
+                  {callAccepted && (
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  
+                  {/* Local video (always visible when stream is available) */}
+                  <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45] z-10">
                     <video
                       ref={localVideoRef}
                       autoPlay
@@ -173,11 +175,12 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  {/* Waiting for call acceptance */}
+                  
+                  {/* Waiting for call acceptance - show contact info in center */}
                   {!callAccepted && !callEnded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#111B21] bg-opacity-90">
-                      <div className="text-center">
-                        <div className="w-24 h-24 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#111B21]">
+                      <div className="text-center z-0">
+                        <div className="w-32 h-32 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
                           {selectedConversation?.profilePicture ? (
                             <img 
                               src={selectedConversation.profilePicture} 
@@ -185,12 +188,12 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                               className="w-full h-full rounded-full object-cover"
                             />
                           ) : (
-                            <span className="text-4xl text-[#8696A0]">
+                            <span className="text-5xl text-[#8696A0]">
                               {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
                             </span>
                           )}
                         </div>
-                        <p className="text-white text-lg">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                        <p className="text-white text-xl font-semibold">{selectedConversation?.fullname || selectedConversation?.name}</p>
                         <p className="text-[#8696A0] mt-2">Calling...</p>
                       </div>
                     </div>
