@@ -21,9 +21,113 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   const callIdRef = useRef(null);
   const authUser = JSON.parse(localStorage.getItem("ChatApp"));
 
+  // Toggle mute/unmute
+  const toggleMute = () => {
+    if (stream) {
+      const audioTracks = stream.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = isMuted;
+      });
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // Toggle speaker
+  const toggleSpeaker = () => {
+    if (remoteVideoRef.current || localVideoRef.current) {
+      const audioElement = remoteVideoRef.current || localVideoRef.current;
+      if (audioElement) {
+        // Try to set audio output device (speaker)
+        if ('setSinkId' in audioElement) {
+          audioElement.setSinkId(isSpeakerOn ? "default" : "").then(() => {
+            setIsSpeakerOn(!isSpeakerOn);
+          }).catch(err => {
+            console.error("Error setting speaker:", err);
+            setIsSpeakerOn(!isSpeakerOn);
+          });
+        } else {
+          // Fallback: just toggle state
+          setIsSpeakerOn(!isSpeakerOn);
+        }
+      } else {
+        setIsSpeakerOn(!isSpeakerOn);
+      }
+    } else {
+      setIsSpeakerOn(!isSpeakerOn);
+    }
+  };
+
+  // Toggle between audio and video call
+  const toggleVideo = async () => {
+    if (!stream) return;
+    
+    const newCallType = currentCallType === "video" ? "audio" : "video";
+    
+    try {
+      if (newCallType === "video") {
+        // Switch to video: add video track
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
+            frameRate: { ideal: 30, max: 60 },
+            facingMode: "user"
+          },
+          audio: false
+        });
+        const videoTrack = videoStream.getVideoTracks()[0];
+        stream.addTrack(videoTrack);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        // Add video track to peer connection
+        if (peerConnectionRef.current) {
+          peerConnectionRef.current.addTrack(videoTrack, stream);
+        }
+        videoStream.getTracks().forEach(track => {
+          if (track !== videoTrack) track.stop();
+        });
+      } else {
+        // Switch to audio: remove video track
+        const videoTracks = stream.getVideoTracks();
+        videoTracks.forEach(track => {
+          track.stop();
+          stream.removeTrack(track);
+          if (peerConnectionRef.current) {
+            const sender = peerConnectionRef.current.getSenders().find(s => 
+              s.track === track
+            );
+            if (sender) {
+              peerConnectionRef.current.removeTrack(sender);
+            }
+          }
+        });
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+      }
+      
+      setCurrentCallType(newCallType);
+      
+      // Notify peer about call type change (if connected)
+      if (socket && selectedConversation && callAccepted) {
+        socket.emit("callUser", {
+          to: selectedConversation._id,
+          signalData: { type: "callTypeChange", callType: newCallType },
+          from: authUser?.user?._id,
+          name: authUser?.user?.fullname,
+          callType: newCallType
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling video:", error);
+      toast.error("Error switching call type");
+    }
+  };
+
   // HD Video constraints for better quality
   const getMediaConstraints = () => {
-    if (callType === "video") {
+    if (currentCallType === "video") {
       return {
         video: {
           width: { ideal: 1280, max: 1920 },
@@ -129,6 +233,11 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
       };
       
       saveCall();
+      
+      // Reset states
+      setCurrentCallType(callType);
+      setIsMuted(false);
+      setIsSpeakerOn(false);
       
       // Get user media with HD settings
       navigator.mediaDevices
