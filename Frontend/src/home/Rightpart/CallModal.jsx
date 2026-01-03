@@ -26,12 +26,18 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
 
   // Toggle mute/unmute
   const toggleMute = () => {
-    if (stream) {
-      const audioTracks = stream.getAudioTracks();
+    const currentStream = streamRef.current || stream;
+    if (currentStream) {
+      const audioTracks = currentStream.getAudioTracks();
+      const newMuteState = !isMuted;
       audioTracks.forEach(track => {
-        track.enabled = isMuted;
+        track.enabled = newMuteState;
+        console.log(`Audio track ${track.id} enabled:`, track.enabled);
       });
-      setIsMuted(!isMuted);
+      setIsMuted(newMuteState);
+      console.log("🎤 Mute state:", newMuteState ? "MUTED" : "UNMUTED");
+    } else {
+      console.warn("No stream available to toggle mute");
     }
   };
 
@@ -250,15 +256,17 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       }
     };
 
-    // Handle ICE candidates
+    // Handle ICE candidates - Separate event from offer/answer
     peerConnection.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit("callUser", {
+      if (event.candidate && socket && selectedConversation) {
+        console.log("🧊 ICE candidate generated, sending to peer");
+        socket.emit("iceCandidate", {
           to: selectedConversation._id,
-          signalData: event.candidate,
-          from: authUser?.user?._id,
-          name: authUser?.user?.fullname
+          candidate: event.candidate,
+          from: authUser?.user?._id
         });
+      } else if (!event.candidate) {
+        console.log("✅ All ICE candidates sent");
       }
     };
 
@@ -462,24 +470,20 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         }
       });
 
-      // Listen for ICE candidates from remote peer (when already in a call)
-      socket.on("callUser", async ({ signalData, from, name, callType: remoteCallType }) => {
-        console.log("Call signal received (ICE candidate or other):", { from, hasCandidate: signalData?.candidate, hasOffer: signalData?.type === "offer" });
+      // Listen for ICE candidates from remote peer (separate event)
+      socket.on("iceCandidate", async ({ candidate, from }) => {
+        console.log("🧊 ICE candidate received from:", from);
         
-        // If we're already in a call, this is an ICE candidate
-        if (peerConnectionRef.current && isOpen) {
-          if (signalData && signalData.candidate) {
-            try {
-              await peerConnectionRef.current.addIceCandidate(
-                new RTCIceCandidate(signalData)
-              );
-              console.log("ICE candidate added from remote peer");
-            } catch (error) {
-              console.error("Error adding ICE candidate:", error);
-            }
+        if (peerConnectionRef.current && candidate && isOpen) {
+          try {
+            await peerConnectionRef.current.addIceCandidate(
+              new RTCIceCandidate(candidate)
+            );
+            console.log("✅ ICE candidate added successfully");
+          } catch (error) {
+            console.error("❌ Error adding ICE candidate:", error);
           }
         }
-        // If we receive an offer but modal is not open, it will be handled by global handler in Right.jsx
       });
 
       // Handle call end from remote party - MUST be defined before other handlers
