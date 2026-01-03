@@ -19,7 +19,7 @@ function Typesend() {
   const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState(null);
   const [showRecordingControls, setShowRecordingControls] = useState(false);
-  const replyTo = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
   const recordingIntervalRef = useRef(null);
   const { loading, sendMessages } = useSendMessage();
   const { socket } = useSocketContext();
