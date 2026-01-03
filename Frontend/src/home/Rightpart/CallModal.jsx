@@ -397,18 +397,34 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
       });
 
       socket.on("callEnded", () => {
-        console.log("📞 Call ended by remote party");
+        console.log("📞 Call ended by remote party - cleaning up");
+        
         // Call ended by other party - end call immediately
         setCallEnded(true);
         
+        // Use current stream reference (need to access from closure)
+        const currentStream = stream;
+        const currentPeerConnection = peerConnectionRef.current;
+        const currentCallAccepted = callAccepted;
+        const currentCallId = callIdRef.current;
+        
         // Stop local stream
-        if (stream) {
-          stream.getTracks().forEach((track) => track.stop());
+        if (currentStream) {
+          currentStream.getTracks().forEach((track) => {
+            track.stop();
+            console.log("Stopped track:", track.kind);
+          });
+          setStream(null);
         }
         
         // Close peer connection
-        if (peerConnectionRef.current) {
-          peerConnectionRef.current.close();
+        if (currentPeerConnection) {
+          try {
+            currentPeerConnection.close();
+            console.log("Peer connection closed");
+          } catch (err) {
+            console.error("Error closing peer connection:", err);
+          }
           peerConnectionRef.current = null;
         }
         
@@ -421,16 +437,17 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
         }
         
         // Update call status
-        if (callIdRef.current) {
-          updateCallStatus(callAccepted ? "answered" : "missed").catch(err => 
+        if (currentCallId) {
+          updateCallStatus(currentCallAccepted ? "answered" : "missed").catch(err => 
             console.error("Error updating call status:", err)
           );
         }
         
-        toast.info("Call ended by other party");
+        toast.info("Call ended");
         
         // Close modal after a short delay
         setTimeout(() => {
+          console.log("Closing call modal after remote end");
           onClose();
           setCallAccepted(false);
           setCallEnded(false);
@@ -439,7 +456,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
           incomingOfferRef.current = null;
           callIdRef.current = null;
           callStartTimeRef.current = null;
-        }, 1000);
+        }, 500);
       });
     }
 
