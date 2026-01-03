@@ -76,10 +76,30 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
     
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file");
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePicture(reader.result);
-        setHasChanges(true);
+        const newPicture = reader.result;
+        setProfilePicture(newPicture);
+        // Check if it's different from original
+        const originalPicture = contact?.profilePicture || "";
+        if (newPicture !== originalPicture) {
+          setHasChanges(true);
+        }
+      };
+      reader.onerror = () => {
+        toast.error("Error reading file");
       };
       reader.readAsDataURL(file);
     }
@@ -88,62 +108,95 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
   const handleSave = async () => {
     if (!isCurrentUser) return;
     
+    // Check if there are any changes
+    const bioChanged = bio.trim() !== (contact?.bio || "Hey there! I am using WhatsApp");
+    const pictureChanged = profilePicture && profilePicture !== (contact?.profilePicture || "");
+    
+    if (!bioChanged && !pictureChanged && !isEditingBio) {
+      toast.info("No changes to save");
+      return;
+    }
+    
     setLoading(true);
     try {
       const token = getToken();
       if (!token) {
         toast.error("Please login again");
+        setLoading(false);
         return;
       }
       
       // Update profile picture
-      if (hasChanges && profilePicture && profilePicture !== contact.profilePicture) {
-        await axios.put(
-          getApiUrl("/api/user/updateProfilePicture"),
-          { profilePicture },
-          {
-            withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      if (pictureChanged) {
+        try {
+          const picResponse = await axios.put(
+            getApiUrl("/api/user/updateProfilePicture"),
+            { profilePicture },
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          console.log("Profile picture updated:", picResponse.data);
+          toast.success("Profile picture updated");
+        } catch (error) {
+          console.error("Error updating profile picture:", error);
+          toast.error("Failed to update profile picture: " + (error.response?.data?.error || error.message));
+        }
       }
       
       // Update bio
-      if (bio !== (contact.bio || "Hey there! I am using WhatsApp")) {
-        await axios.put(
-          getApiUrl("/api/user/updateBio"),
-          { bio: bio.trim() },
-          {
-            withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      if (bioChanged) {
+        try {
+          const bioResponse = await axios.put(
+            getApiUrl("/api/user/updateBio"),
+            { bio: bio.trim() },
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          console.log("Bio updated:", bioResponse.data);
+          toast.success("Bio updated");
+        } catch (error) {
+          console.error("Error updating bio:", error);
+          toast.error("Failed to update bio: " + (error.response?.data?.error || error.message));
+        }
       }
       
       // Update local storage
-      const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
-      if (chatApp?.user) {
-        if (profilePicture) chatApp.user.profilePicture = profilePicture;
-        chatApp.user.bio = bio.trim();
-        localStorage.setItem("ChatApp", JSON.stringify(chatApp));
-        setAuthUser(chatApp);
+      try {
+        const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
+        if (chatApp?.user) {
+          if (pictureChanged && profilePicture) {
+            chatApp.user.profilePicture = profilePicture;
+          }
+          if (bioChanged) {
+            chatApp.user.bio = bio.trim();
+          }
+          localStorage.setItem("ChatApp", JSON.stringify(chatApp));
+          setAuthUser(chatApp);
+        }
+      } catch (error) {
+        console.error("Error updating local storage:", error);
       }
       
       setHasChanges(false);
       setIsEditingBio(false);
-      toast.success("Changes saved successfully!");
       
+      // Reload after a short delay to show success message
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast.error("Failed to save changes");
-    } finally {
+      toast.error("Failed to save changes: " + (error.response?.data?.error || error.message));
       setLoading(false);
     }
   };
@@ -281,7 +334,15 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
               <h3 className="text-[#8696A0] text-xs uppercase">About</h3>
               {isCurrentUser && (
                 <button
-                  onClick={() => setIsEditingBio(!isEditingBio)}
+                  onClick={() => {
+                    if (isEditingBio) {
+                      // Cancel editing - reset bio to original
+                      setBio(contact?.bio || "Hey there! I am using WhatsApp");
+                      setIsEditingBio(false);
+                    } else {
+                      setIsEditingBio(true);
+                    }
+                  }}
                   className="text-[#00A884] text-xs hover:underline"
                 >
                   {isEditingBio ? "Cancel" : "Edit"}
@@ -407,11 +468,15 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
             </div>
           )}
 
-          {isCurrentUser && hasChanges && (
+          {isCurrentUser && (
             <button
               onClick={handleSave}
-              disabled={loading}
-              className="w-full bg-[#00A884] hover:bg-[#06cf9c] text-white py-3 rounded transition disabled:opacity-50"
+              disabled={loading || (!hasChanges && !isEditingBio)}
+              className={`w-full text-white py-3 rounded transition ${
+                hasChanges || isEditingBio
+                  ? "bg-[#00A884] hover:bg-[#06cf9c] disabled:opacity-50"
+                  : "bg-[#313D45] cursor-not-allowed opacity-50"
+              }`}
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
