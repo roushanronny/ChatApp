@@ -385,6 +385,62 @@ function Message({ message }) {
       );
     }
     
+    if (message.messageType === "audio") {
+      const audioUrl = message.mediaUrl || message.content || "";
+      if (!audioUrl) return <p className="text-[#111B21]">Audio not available</p>;
+      
+      return (
+        <div>
+          {renderReplyPreview()}
+          <div className="flex items-center space-x-2 bg-[#F0F2F5] px-3 py-2 rounded-lg mb-1">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="#667781">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+            </svg>
+            <audio 
+              src={audioUrl} 
+              controls 
+              className="flex-1"
+              style={{ maxWidth: '200px', height: '32px' }}
+              onError={(e) => {
+                console.error("Error loading audio:", e);
+              }}
+            />
+          </div>
+          {message.message && (
+            <p className="mt-1 text-[#111B21]">{message.message}</p>
+          )}
+        </div>
+      );
+    }
+    
+    if (message.messageType === "file") {
+      const fileUrl = message.mediaUrl || message.content || "";
+      const fileName = message.message || "File";
+      
+      return (
+        <div>
+          {renderReplyPreview()}
+          <div className="flex items-center space-x-3 bg-[#F0F2F5] px-3 py-2 rounded-lg mb-1">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="#667781">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-[#111B21] text-sm font-medium truncate">{fileName}</p>
+              {fileUrl && (
+                <a 
+                  href={fileUrl} 
+                  download
+                  className="text-[#00A884] text-xs hover:underline"
+                >
+                  Download
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     // For text messages, check both message and content fields
     const textContent = message.message || message.content || "";
     return (

@@ -516,14 +516,28 @@ function Typesend() {
               accept="image/*,video/*"
               className="hidden"
               ref={mediaInputRef}
-              onChange={(e) => handleFileSelect(e, e.target.files[0]?.type.startsWith("video/") ? "video" : "image")}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  const type = file.type.startsWith("video/") ? "video" : "image";
+                  handleFileSelect(e, type);
+                }
+                // Reset input to allow selecting same file again
+                e.target.value = "";
+              }}
             />
             
             <input
               type="file"
               className="hidden"
               ref={generalFileInputRef}
-              onChange={(e) => handleFileSelect(e, "file")}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleFileSelect(e, "file");
+                }
+                // Reset input to allow selecting same file again
+                e.target.value = "";
+              }}
             />
           </div>
           
