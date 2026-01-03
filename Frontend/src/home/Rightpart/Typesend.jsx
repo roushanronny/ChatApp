@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
-import { FaPaperclip, FaSmile, FaMicrophone, FaTimes } from "react-icons/fa";
+import { FaPaperclip, FaSmile, FaMicrophone, FaTimes, FaStop, FaCheckCircle } from "react-icons/fa";
 import useSendMessage from "../../context/useSendMessage.js";
 import { useSocketContext } from "../../context/SocketContext.jsx";
 import useConversation from "../../statemanage/useConversation.js";
@@ -15,7 +15,12 @@ function Typesend() {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [replyTo, setReplyTo] = useState(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState(null);
+  const [showRecordingControls, setShowRecordingControls] = useState(false);
+  const replyTo = useState(null);
+  const recordingIntervalRef = useRef(null);
   const { loading, sendMessages } = useSendMessage();
   const { socket } = useSocketContext();
   const { selectedConversation } = useConversation();
@@ -372,8 +377,14 @@ function Typesend() {
 
       mediaRecorderRef.current.start(100); // Collect data every 100ms
       setIsRecording(true);
+      setRecordingDuration(0);
+      setShowRecordingControls(false);
       console.log("Recording started");
-      toast.success("Recording...");
+      
+      // Start duration counter
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
     } catch (error) {
       console.error("Error accessing microphone:", error);
       if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
@@ -392,14 +403,87 @@ function Typesend() {
       try {
         if (mediaRecorderRef.current.state === "recording") {
           mediaRecorderRef.current.stop();
-          console.log("Recording stopped");
+          console.log("Recording stopped by user");
         }
-        setIsRecording(false);
+        // Don't set isRecording to false here - let onstop handler do it
       } catch (error) {
         console.error("Error stopping recording:", error);
         setIsRecording(false);
+        setRecordingDuration(0);
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
       }
     }
+  };
+
+  const sendRecording = async () => {
+    if (!recordedAudioBlob || !selectedConversation) {
+      toast.error("No recording to send");
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          console.log("Sending audio message, base64 length:", reader.result?.length);
+          await sendMessages("", "audio", reader.result);
+          console.log("Voice message sent successfully");
+          toast.success("Voice message sent");
+          
+          // Reset recording state
+          setRecordedAudioBlob(null);
+          if (recordedAudioUrl) {
+            URL.revokeObjectURL(recordedAudioUrl);
+          }
+          setRecordedAudioUrl(null);
+          setShowRecordingControls(false);
+          setRecordingDuration(0);
+        } catch (error) {
+          console.error("Error sending audio:", error);
+          const errorMsg = error.response?.data?.error || error.message || "Failed to send voice message";
+          toast.error(errorMsg);
+        }
+      };
+      reader.onerror = (error) => {
+        console.error("FileReader error:", error);
+        toast.error("Error processing audio");
+      };
+      reader.readAsDataURL(recordedAudioBlob);
+    } catch (error) {
+      console.error("Error sending recording:", error);
+      toast.error("Failed to send recording");
+    }
+  };
+
+  const cancelRecording = () => {
+    // Clean up recording state
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+    }
+    setRecordedAudioBlob(null);
+    setRecordedAudioUrl(null);
+    setShowRecordingControls(false);
+    setRecordingDuration(0);
+    
+    // Stop any active recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    
+    // Clean up any streams
+    if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  // Format duration as MM:SS
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleMicMouseDown = async (e) => {
@@ -596,7 +680,7 @@ function Typesend() {
             </button>
           </div>
           
-          {(message || selectedFile || filePreview) && !isRecording ? (
+          {(message || selectedFile || filePreview) && !isRecording && !showRecordingControls ? (
             <button
               type="submit"
               disabled={loading}
@@ -606,14 +690,39 @@ function Typesend() {
               <IoSend className="text-xl" />
             </button>
           ) : isRecording ? (
-            <button
-              type="button"
-              disabled
-              className="p-3 text-red-500 rounded-full transition"
-              title="Recording..."
-            >
-              <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-            </button>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-red-500 px-3 py-2 rounded-full">
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                <span className="text-white text-sm font-medium">{formatDuration(recordingDuration)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition"
+                title="Stop Recording"
+              >
+                <FaStop className="text-lg" />
+              </button>
+            </div>
+          ) : showRecordingControls ? (
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={sendRecording}
+                className="p-3 bg-[#00A884] hover:bg-[#00B894] text-white rounded-full transition"
+                title="Send Recording"
+              >
+                <FaCheckCircle className="text-xl" />
+              </button>
+              <button
+                type="button"
+                onClick={cancelRecording}
+                className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition"
+                title="Cancel"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
           ) : (
             <button
               type="button"

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaCheck, FaCheckDouble, FaStar } from "react-icons/fa";
+import { FaCheck, FaCheckDouble, FaStar, FaFile } from "react-icons/fa";
 import MessageContextMenu from "../../components/MessageContextMenu";
 import ReactPicker from "../../components/ReactPicker";
 import ForwardModal from "../../components/ForwardModal";
