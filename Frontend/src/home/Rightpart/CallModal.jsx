@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { getApiUrl } from "../../config/api.js";
 
-function CallModal({ isOpen, onClose, callType, selectedConversation }) {
+function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCall = null }) {
   const { socket } = useSocketContext();
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
@@ -226,6 +226,92 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
 
   useEffect(() => {
     if (isOpen && socket && selectedConversation) {
+      // Reset states
+      setCurrentCallType(callType || "video");
+      setIsMuted(false);
+      setIsSpeakerOn(false);
+      
+      // If this is an incoming call (receiver), handle it differently
+      if (incomingCall && incomingCall.type === "offer") {
+        console.log("Handling incoming call offer");
+        
+        // Save call to history as answered
+        const saveCall = async () => {
+          try {
+            const token = Cookies.get("jwt");
+            const response = await axios.post(
+              getApiUrl("/api/call/create"),
+              {
+                receiverId: selectedConversation._id,
+                callType: callType || "video",
+                status: "answered",
+              },
+              {
+                withCredentials: true,
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            callIdRef.current = response.data.call._id;
+            callStartTimeRef.current = new Date();
+          } catch (error) {
+            console.error("Error saving call:", error);
+          }
+        };
+        
+        // Get user media and answer the call
+        navigator.mediaDevices
+          .getUserMedia(getMediaConstraints())
+          .then(async (currentStream) => {
+            setStream(currentStream);
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = currentStream;
+              localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
+            }
+
+            // Create peer connection
+            peerConnectionRef.current = createPeerConnection();
+            currentStream.getTracks().forEach(track => {
+              peerConnectionRef.current.addTrack(track, currentStream);
+            });
+
+            // Set remote description (offer)
+            await peerConnectionRef.current.setRemoteDescription(
+              new RTCSessionDescription(incomingCall)
+            );
+            console.log("Remote description (offer) set");
+
+            // Create answer
+            const answer = await peerConnectionRef.current.createAnswer();
+            await peerConnectionRef.current.setLocalDescription(answer);
+            console.log("Answer created");
+
+            // Send answer back to caller
+            socket.emit("answerCall", {
+              to: selectedConversation._id,
+              signal: peerConnectionRef.current.localDescription,
+              from: authUser?.user?._id,
+            });
+            console.log("Answer sent to caller");
+
+            // Mark as accepted
+            setCallAccepted(true);
+            
+            // Save call
+            await saveCall();
+          })
+          .catch((err) => {
+            console.error("Error accessing media devices:", err);
+            toast.error("Camera/Microphone access denied");
+          });
+        
+        return; // Exit early for incoming calls
+      }
+      
+      // This is an outgoing call (caller) - initiate call
+      console.log("Initiating outgoing call");
+      
       // Save call to history
       const saveCall = async () => {
         try {
@@ -254,11 +340,6 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
       
       saveCall();
       
-      // Reset states
-      setCurrentCallType(callType);
-      setIsMuted(false);
-      setIsSpeakerOn(false);
-      
       // Get user media with HD settings
       navigator.mediaDevices
         .getUserMedia(getMediaConstraints())
@@ -266,10 +347,14 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
           setStream(currentStream);
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = currentStream;
+            localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
           }
 
           // Create peer connection
           peerConnectionRef.current = createPeerConnection();
+          currentStream.getTracks().forEach(track => {
+            peerConnectionRef.current.addTrack(track, currentStream);
+          });
 
           // Create and send offer
           peerConnectionRef.current
@@ -289,7 +374,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
                 name: authUser?.user?.fullname,
                 callType: callType
               });
-              console.log("Call offer sent");
+              console.log("Call offer sent to:", selectedConversation._id);
             })
             .catch((err) => {
               console.error("Error creating offer:", err);
@@ -327,21 +412,24 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         }
       });
 
-      // Listen for ICE candidates and other signals from remote peer
-      socket.on("callUser", async ({ signalData, from, callType: remoteCallType }) => {
-        if (signalData && peerConnectionRef.current) {
-          try {
-            // If it's an ICE candidate
-            if (signalData.candidate) {
+      // Listen for ICE candidates from remote peer (when already in a call)
+      socket.on("callUser", async ({ signalData, from, name, callType: remoteCallType }) => {
+        console.log("Call signal received (ICE candidate or other):", { from, hasCandidate: signalData?.candidate, hasOffer: signalData?.type === "offer" });
+        
+        // If we're already in a call, this is an ICE candidate
+        if (peerConnectionRef.current && isOpen) {
+          if (signalData && signalData.candidate) {
+            try {
               await peerConnectionRef.current.addIceCandidate(
                 new RTCIceCandidate(signalData)
               );
-              console.log("ICE candidate added");
+              console.log("ICE candidate added from remote peer");
+            } catch (error) {
+              console.error("Error adding ICE candidate:", error);
             }
-          } catch (error) {
-            console.error("Error handling signal:", error);
           }
         }
+        // If we receive an offer but modal is not open, it will be handled by global handler in Right.jsx
       });
 
       socket.on("callEnded", () => {
@@ -363,7 +451,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
         socket.off("callEnded");
       }
     };
-  }, [isOpen, socket, selectedConversation, callType]);
+  }, [isOpen, socket, selectedConversation, callType, incomingCall]);
 
   const updateCallStatus = async (status) => {
     if (!callIdRef.current) return;

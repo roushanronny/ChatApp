@@ -47,10 +47,14 @@ io.on("connection", (socket) => {
   });
 
   // Call events
-  socket.on("callUser", ({ to, signalData, from, name }) => {
+  socket.on("callUser", ({ to, signalData, from, name, callType }) => {
     const receiverSocketId = getReceiverSocketId(to);
+    console.log("Call event received:", { to, from, name, callType, receiverSocketId });
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("callUser", { signalData, from, name });
+      io.to(receiverSocketId).emit("callUser", { signalData, from, name, callType });
+      console.log("Call forwarded to:", receiverSocketId);
+    } else {
+      console.log("Receiver not online:", to);
     }
   });
 

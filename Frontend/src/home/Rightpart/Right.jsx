@@ -1,19 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Chatuser from "./Chatuser";
 import Messages from "./Messages";
 import Typesend from "./Typesend";
 import useConversation from "../../statemanage/useConversation.js";
 import { useAuth } from "../../context/AuthProvider.jsx";
+import { useSocketContext } from "../../context/SocketContext.jsx";
 import { CiMenuFries } from "react-icons/ci";
+import CallModal from "./CallModal";
+import useGetAllUsers from "../../context/useGetAllUsers.jsx";
 
 function Right() {
   const { selectedConversation, setSelectedConversation } = useConversation();
   const [searchQuery, setSearchQuery] = useState("");
+  const { socket } = useSocketContext();
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [showIncomingCallModal, setShowIncomingCallModal] = useState(false);
+  const incomingCallRef = useRef(null);
 
   // Reset search when conversation changes
   useEffect(() => {
     setSearchQuery("");
   }, [selectedConversation?._id]);
+
+  // Global incoming call handler
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleIncomingCall = async ({ signalData, from, name, callType }) => {
+      console.log("Global incoming call handler:", { from, name, callType, hasOffer: signalData?.type === "offer" });
+      
+      // Check if this is a call offer (RTCSessionDescription with type "offer")
+      if (signalData && signalData.type === "offer") {
+        console.log("Incoming call offer detected, opening CallModal");
+        
+        // Find the caller user
+        const [allUsers] = useGetAllUsers();
+        const caller = allUsers.find(u => u._id === from) || { _id: from, fullname: name || "Unknown" };
+        
+        // Store incoming call info
+        incomingCallRef.current = {
+          caller: caller,
+          signalData: signalData,
+          callType: callType || "video",
+          from: from
+        };
+        
+        // Open call modal
+        setShowIncomingCallModal(true);
+        setIncomingCall(incomingCallRef.current);
+        
+        // Switch to chat with caller if not already selected
+        if (!selectedConversation || selectedConversation._id !== from) {
+          setSelectedConversation(caller);
+        }
+      }
+    };
+
+    socket.on("callUser", handleIncomingCall);
+
+    return () => {
+      socket.off("callUser", handleIncomingCall);
+    };
+  }, [socket, selectedConversation, setSelectedConversation]);
 
   return (
     <div className="w-full bg-[#0B141A] text-gray-300 flex flex-col h-screen overflow-hidden">
@@ -34,6 +82,21 @@ function Right() {
             <Typesend />
           </div>
         </>
+      )}
+      
+      {/* Incoming Call Modal */}
+      {showIncomingCallModal && incomingCall && (
+        <CallModal
+          isOpen={showIncomingCallModal}
+          onClose={() => {
+            setShowIncomingCallModal(false);
+            setIncomingCall(null);
+            incomingCallRef.current = null;
+          }}
+          callType={incomingCall.callType}
+          selectedConversation={incomingCall.caller}
+          incomingCall={incomingCall.signalData}
+        />
       )}
     </div>
   );
