@@ -587,13 +587,14 @@ function Typesend() {
               onMouseDown={handleMicMouseDown}
               onMouseUp={handleMicMouseUp}
               onMouseLeave={handleMicMouseLeave}
-              onTouchStart={handleMicMouseDown}
-              onTouchEnd={handleMicMouseUp}
+              onTouchStart={handleMicTouchStart}
+              onTouchEnd={handleMicTouchEnd}
+              disabled={loading || isRecording}
               className={`p-3 rounded-full transition ${
                 isRecording 
                   ? "bg-red-500 text-white animate-pulse" 
                   : "text-[#8696A0] hover:bg-[#313D45]"
-              }`}
+              } disabled:opacity-50`}
               title={isRecording ? "Recording... Release to send" : "Hold to record"}
             >
               <FaMicrophone className="text-xl" />
