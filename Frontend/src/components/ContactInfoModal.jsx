@@ -29,8 +29,11 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
 
   useEffect(() => {
     if (contact) {
-      const contactBio = contact.bio || "Hey there! I am using WhatsApp";
-      const contactPicture = contact.profilePicture || "";
+      // If current user, use authUser.user data, otherwise use contact data
+      const userData = isCurrentUser ? authUser?.user : contact;
+      
+      const contactBio = userData?.bio || "Hey there! I am using WhatsApp";
+      const contactPicture = userData?.profilePicture || "";
       
       setBio(contactBio);
       setProfilePicture(contactPicture);
@@ -38,7 +41,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       setIsEditingBio(false);
       
       // Check if blocked
-      if (authUser?.user?.blockedUsers && Array.isArray(authUser.user.blockedUsers)) {
+      if (!isCurrentUser && authUser?.user?.blockedUsers && Array.isArray(authUser.user.blockedUsers)) {
         setIsBlocked(authUser.user.blockedUsers.some(id => 
           (typeof id === 'string' ? id : id.toString()) === contact._id.toString()
         ));
@@ -101,8 +104,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       reader.onloadend = () => {
         const newPicture = reader.result;
         setProfilePicture(newPicture);
-        // Check if it's different from original
-        const originalPicture = contact?.profilePicture || "";
+        // Check if it's different from original (use current user data)
+        const originalPicture = authUser?.user?.profilePicture || "";
         if (newPicture !== originalPicture) {
           setHasChanges(true);
         }
@@ -117,9 +120,14 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
   const handleSave = async () => {
     if (!isCurrentUser) return;
     
+    // Get current user data for comparison
+    const currentUser = authUser?.user;
+    const currentBio = currentUser?.bio || "Hey there! I am using WhatsApp";
+    const currentPicture = currentUser?.profilePicture || "";
+    
     // Check if there are any changes
-    const bioChanged = bio.trim() !== (contact?.bio || "Hey there! I am using WhatsApp");
-    const pictureChanged = profilePicture && profilePicture !== (contact?.profilePicture || "");
+    const bioChanged = bio.trim() !== currentBio;
+    const pictureChanged = profilePicture && profilePicture !== currentPicture;
     
     if (!bioChanged && !pictureChanged && !isEditingBio) {
       toast.info("No changes to save");
@@ -136,7 +144,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       }
       
       // Update profile picture
-      if (pictureChanged) {
+      if (pictureChanged && profilePicture) {
         try {
           const picResponse = await axios.put(
             getApiUrl("/api/user/updateProfilePicture"),
@@ -154,6 +162,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
         } catch (error) {
           console.error("Error updating profile picture:", error);
           toast.error("Failed to update profile picture: " + (error.response?.data?.error || error.message));
+          setLoading(false);
+          return;
         }
       }
       
@@ -176,6 +186,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
         } catch (error) {
           console.error("Error updating bio:", error);
           toast.error("Failed to update bio: " + (error.response?.data?.error || error.message));
+          setLoading(false);
+          return;
         }
       }
       
@@ -198,6 +210,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       
       setHasChanges(false);
       setIsEditingBio(false);
+      setLoading(false);
       
       // Reload after a short delay to show success message
       setTimeout(() => {
@@ -302,8 +315,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
             {isCurrentUser ? (
               <label className="cursor-pointer">
                 <img 
-                  src={profilePicture || defaultImage}
-                  alt={contact.fullname || contact.name}
+                  src={profilePicture || authUser?.user?.profilePicture || defaultImage}
+                  alt={authUser?.user?.fullname || "You"}
                   className="w-32 h-32 rounded-full object-cover"
                 />
                 <input
@@ -320,8 +333,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
               </label>
             ) : (
               <img 
-                src={contact.profilePicture || defaultImage}
-                alt={contact.fullname || contact.name}
+                src={contact?.profilePicture || defaultImage}
+                alt={contact?.fullname || contact?.name || "Contact"}
                 className="w-32 h-32 rounded-full object-cover"
               />
             )}
@@ -330,10 +343,10 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
             )}
           </div>
           <h2 className="text-white text-xl font-semibold mt-4">
-            {contact.fullname || contact.name}
+            {isCurrentUser ? (authUser?.user?.fullname || "You") : (contact?.fullname || contact?.name || "Contact")}
           </h2>
           <p className="text-[#8696A0] text-sm mt-1">
-            {isOnline ? "Online" : "Offline"}
+            {isCurrentUser ? (onlineUsers.includes(authUser?.user?._id) ? "Online" : "Offline") : (isOnline ? "Online" : "Offline")}
           </p>
         </div>
 
@@ -345,9 +358,11 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                 <button
                   onClick={() => {
                     if (isEditingBio) {
-                      // Cancel editing - reset bio to original
-                      setBio(contact?.bio || "Hey there! I am using WhatsApp");
+                      // Cancel editing - reset bio to original (from current user data)
+                      const currentBio = authUser?.user?.bio || "Hey there! I am using WhatsApp";
+                      setBio(currentBio);
                       setIsEditingBio(false);
+                      setHasChanges(false);
                     } else {
                       setIsEditingBio(true);
                     }
@@ -365,7 +380,13 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                   value={bio}
                   onChange={(e) => {
                     setBio(e.target.value);
-                    setHasChanges(true);
+                    // Check if different from current user's bio
+                    const currentBio = authUser?.user?.bio || "Hey there! I am using WhatsApp";
+                    if (e.target.value.trim() !== currentBio) {
+                      setHasChanges(true);
+                    } else {
+                      setHasChanges(false);
+                    }
                   }}
                   className="w-full bg-transparent text-white text-sm outline-none"
                   autoFocus
@@ -373,7 +394,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                 />
               ) : (
                 <p className="text-white text-sm">
-                  {contact.bio || "Hey there! I am using WhatsApp"}
+                  {isCurrentUser ? (authUser?.user?.bio || "Hey there! I am using WhatsApp") : (contact?.bio || "Hey there! I am using WhatsApp")}
                 </p>
               )}
             </div>
