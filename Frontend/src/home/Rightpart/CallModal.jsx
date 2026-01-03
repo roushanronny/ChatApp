@@ -219,8 +219,10 @@ function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   useEffect(() => {
     if (stream && localVideoRef.current) {
       localVideoRef.current.srcObject = stream;
+      // Force play to ensure video displays
+      localVideoRef.current.play().catch(err => console.error("Error playing video:", err));
     }
-  }, [stream]);
+  }, [stream, currentCallType]);
 
   useEffect(() => {
     if (isOpen && socket && selectedConversation) {
