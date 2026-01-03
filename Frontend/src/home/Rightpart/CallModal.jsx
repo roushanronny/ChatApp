@@ -4,6 +4,7 @@ import { useSocketContext } from "../../context/SocketContext.jsx";
 import axios from "axios";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { getApiUrl } from "../../config/api.js";
 
 function CallModal({ isOpen, onClose, callType, selectedConversation }) {
   const { socket } = useSocketContext();
