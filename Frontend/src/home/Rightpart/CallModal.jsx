@@ -1052,13 +1052,9 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L8.293 3.34a1 1 0 011.414 1.414L6.524 7.938a4 4 0 005.538 5.538l2.232 2.232a1 1 0 11-1.414 1.414l-2.232-2.232zM5.11 6.524a6 6 0 008.367 8.367l-1.402-1.402a4 4 0 01-5.537-5.537L5.11 6.524zm8.367 1.414a1 1 0 011.414 0l3 3a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
+                <FaMicrophoneSlash className="w-6 h-6" />
               ) : (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                </svg>
+                <FaMicrophone className="w-6 h-6" />
               )}
             </button>
 
