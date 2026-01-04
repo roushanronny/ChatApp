@@ -15,6 +15,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [currentCallType, setCurrentCallType] = useState(callType); // Can switch between audio/video
   const [isIncomingCall, setIsIncomingCall] = useState(false); // Track if this is an incoming call
+  const [callDuration, setCallDuration] = useState(0); // Call duration timer
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -858,9 +859,38 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                   }}
                 />
                 
+                {/* Top bar - Timer and Meeting Info (Figma style) */}
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/50 to-transparent z-30 px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-white font-semibold text-lg">
+                        {selectedConversation?.fullname || selectedConversation?.name || "Video Call"}
+                      </div>
+                      {callDuration > 0 && (
+                        <div className="bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <span className="text-white text-sm font-mono">{formatDuration(callDuration)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {/* Participant count (for future group calls) */}
+                      <div className="bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full">
+                        <span className="text-white text-sm">1</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Participant name overlay on video (bottom left) */}
+                <div className="absolute bottom-20 left-4 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg z-20">
+                  <p className="text-white font-semibold text-lg">
+                    {selectedConversation?.fullname || selectedConversation?.name}
+                  </p>
+                </div>
+                
                 {/* Local video as PIP - top right corner */}
                 {(stream || streamRef.current) && (
-                  <div className="absolute top-4 right-4 w-32 h-44 bg-[#0B141A] rounded-lg overflow-hidden shadow-2xl border-2 border-white/20 z-20">
+                  <div className="absolute top-16 right-4 w-40 h-52 bg-[#0B141A] rounded-lg overflow-hidden shadow-2xl border-2 border-white/20 z-20">
                     <video
                       key={`local-pip-${streamRef.current?.id || stream?.id || Date.now()}`}
                       ref={localVideoRef}
@@ -875,6 +905,12 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                         }
                       }}
                     />
+                    {/* Local user name on PIP */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
+                      <p className="text-white text-xs font-medium truncate">
+                        {authUser?.user?.fullname || "You"}
+                      </p>
+                    </div>
                   </div>
                 )}
               </>
