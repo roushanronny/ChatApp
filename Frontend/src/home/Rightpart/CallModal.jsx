@@ -1046,64 +1046,66 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             </div>
           )}
 
-          {/* Call Controls Bar - Show when call is accepted or outgoing (but not ended) */}
-          {!isIncomingCall && !callEnded && callAccepted && (
-            <div className={`${currentCallType === "video" ? "absolute bottom-0 left-0 right-0" : ""} bg-[#111B21] rounded-lg px-6 py-4 flex items-center justify-between ${currentCallType === "video" ? "mx-4 mb-4" : ""}`}>
-            {/* Speaker Button */}
-            <button
-              onClick={toggleSpeaker}
-              className={`p-3 rounded-full transition ${
-                isSpeakerOn 
-                  ? "bg-[#25D366] text-white" 
-                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
-              }`}
-              title={isSpeakerOn ? "Speaker On" : "Speaker Off"}
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
-              </svg>
-            </button>
-
-            {/* Video Toggle Button */}
-            <button
-              onClick={toggleVideo}
-              className={`p-3 rounded-full transition ${
-                currentCallType === "video"
-                  ? "bg-[#25D366] text-white"
-                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
-              }`}
-              title={currentCallType === "video" ? "Video On" : "Video Off"}
-            >
-              <FaVideo className="w-6 h-6" />
-            </button>
-
+        {/* Call Controls Bar - Bottom Center (Figma style) */}
+        {callAccepted && !callEnded && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center space-x-3">
             {/* Mute Button */}
             <button
               onClick={toggleMute}
-              className={`p-3 rounded-full transition ${
+              className={`p-4 rounded-full transition-all shadow-lg ${
                 isMuted
-                  ? "bg-red-500 text-white"
-                  : "bg-[#313D45] text-[#8696A0] hover:bg-[#202C33]"
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
               }`}
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
-                <FaMicrophoneSlash className="w-6 h-6" />
+                <FaMicrophoneSlash className="w-5 h-5" />
               ) : (
-                <FaMicrophone className="w-6 h-6" />
+                <FaMicrophone className="w-5 h-5" />
               )}
+            </button>
+
+            {/* Video Toggle Button (only for video calls) */}
+            {currentCallType === "video" && (
+              <button
+                onClick={toggleVideo}
+                className={`p-4 rounded-full transition-all shadow-lg ${
+                  stream && stream.getVideoTracks()[0]?.enabled
+                    ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+                    : "bg-red-500 text-white hover:bg-red-600"
+                }`}
+                title={stream && stream.getVideoTracks()[0]?.enabled ? "Video On" : "Video Off"}
+              >
+                <FaVideo className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Speaker Button */}
+            <button
+              onClick={toggleSpeaker}
+              className={`p-4 rounded-full transition-all shadow-lg ${
+                isSpeakerOn 
+                  ? "bg-white/20 text-white hover:bg-white/30" 
+                  : "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+              }`}
+              title={isSpeakerOn ? "Speaker On" : "Speaker Off"}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+              </svg>
             </button>
 
             {/* End Call Button */}
             <button
               onClick={handleEndCall}
-              className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full transition shadow-lg"
+              className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full transition-all shadow-2xl transform hover:scale-110 active:scale-95"
               title="End Call"
             >
-              <FaPhoneSlash className="text-2xl" />
+              <FaPhoneSlash className="text-xl" />
             </button>
           </div>
-          )}
+        )}
         </div>
       </div>
     </div>
