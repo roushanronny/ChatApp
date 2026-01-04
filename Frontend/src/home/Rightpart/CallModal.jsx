@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FaPhone, FaVideo, FaTimes, FaPhoneSlash } from "react-icons/fa";
+import { FaPhone, FaVideo, FaTimes, FaPhoneSlash, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { useSocketContext } from "../../context/SocketContext.jsx";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -832,168 +832,156 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#0B141A] flex items-center justify-center z-50">
-      <div className="bg-[#202C33] rounded-lg p-6 max-w-4xl w-full h-[80vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-white text-xl font-semibold">
-            {currentCallType === "video" ? "Video Call" : "Audio Call"}
-          </h2>
-          <button onClick={handleEndCall} className="text-[#8696A0] hover:text-white transition">
-            <FaTimes className="text-2xl" />
-          </button>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-          {currentCallType === "video" && (
-            <div className="relative w-full h-full bg-[#111B21] rounded-lg overflow-hidden min-h-[400px]">
-              {/* When call is accepted: Show remote video full screen with local PIP */}
-              {callAccepted && !callEnded ? (
-                <>
-                  {/* Remote video - full screen */}
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    muted={false}
-                    className="w-full h-full object-cover"
-                    onLoadedMetadata={() => {
-                      console.log("📹 Remote video metadata loaded");
-                      if (remoteVideoRef.current) {
-                        remoteVideoRef.current.muted = false;
-                        remoteVideoRef.current.volume = 1.0;
-                        remoteVideoRef.current.play().catch(err => console.error("Error playing remote video:", err));
-                        console.log("✅ Remote video playing with audio, muted:", remoteVideoRef.current.muted);
-                      }
-                    }}
-                  />
-                  
-                  {/* Local video as PIP */}
-                  {(stream || streamRef.current) && (
-                    <div className="absolute bottom-4 right-4 w-48 h-36 bg-[#202C33] rounded-lg overflow-hidden shadow-lg border-2 border-[#313D45] z-10">
-                      <video
-                        key={`local-pip-${streamRef.current?.id || stream?.id || Date.now()}`}
-                        ref={localVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                        onLoadedMetadata={() => {
-                          console.log("📹 Local PIP video metadata loaded");
-                          if (localVideoRef.current) {
-                            localVideoRef.current.play().catch(err => console.error("Error playing local PIP:", err));
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </>
-              ) : !callEnded ? (
-                /* When calling (not accepted yet): Show local video full screen */
-                <>
-                  {(stream || streamRef.current) && (
+    <div className="fixed inset-0 bg-[#0B141A] z-50 flex flex-col">
+      {/* Full screen video call container */}
+      <div className="flex-1 relative w-full h-full">
+        {currentCallType === "video" && (
+          <>
+            {/* When call is accepted: Show remote video full screen with local PIP */}
+            {callAccepted && !callEnded ? (
+              <>
+                {/* Remote video - full screen background */}
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  muted={false}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onLoadedMetadata={() => {
+                    console.log("📹 Remote video metadata loaded");
+                    if (remoteVideoRef.current) {
+                      remoteVideoRef.current.muted = false;
+                      remoteVideoRef.current.volume = 1.0;
+                      remoteVideoRef.current.play().catch(err => console.error("Error playing remote video:", err));
+                      console.log("✅ Remote video playing with audio, muted:", remoteVideoRef.current.muted);
+                    }
+                  }}
+                />
+                
+                {/* Local video as PIP - top right corner */}
+                {(stream || streamRef.current) && (
+                  <div className="absolute top-4 right-4 w-32 h-44 bg-[#0B141A] rounded-lg overflow-hidden shadow-2xl border-2 border-white/20 z-20">
                     <video
+                      key={`local-pip-${streamRef.current?.id || stream?.id || Date.now()}`}
                       ref={localVideoRef}
                       autoPlay
                       playsInline
                       muted
                       className="w-full h-full object-cover"
                       onLoadedMetadata={() => {
-                        console.log("📹 Local video metadata loaded (pre-accept)");
+                        console.log("📹 Local PIP video metadata loaded");
                         if (localVideoRef.current) {
-                          localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+                          localVideoRef.current.play().catch(err => console.error("Error playing local PIP:", err));
                         }
                       }}
                     />
-                  )}
-                  
-                  {/* Contact info overlay when calling */}
-                  {!callAccepted && (
-                    <div className="absolute top-4 left-4 bg-[#111B21] bg-opacity-80 rounded-lg px-4 py-3 flex items-center space-x-3 z-20">
-                      <div className="w-12 h-12 bg-[#313D45] rounded-full flex items-center justify-center flex-shrink-0">
-                        {selectedConversation?.profilePicture ? (
-                          <img 
-                            src={selectedConversation.profilePicture} 
-                            alt={selectedConversation?.fullname || selectedConversation?.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xl text-[#8696A0]">
-                            {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-white font-semibold">{selectedConversation?.fullname || selectedConversation?.name}</p>
-                        <p className="text-[#8696A0] text-sm">Calling...</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FaVideo className="text-3xl text-[#8696A0]" />
-                    </div>
-                    <p className="text-white text-lg">{selectedConversation?.fullname || selectedConversation?.name}</p>
-                    <p className="text-[#8696A0] mt-2">Connecting...</p>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentCallType === "audio" && (
-            <div className="flex-1 flex flex-col items-center justify-center">
-              {/* Profile Picture */}
-              <div className="w-48 h-48 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                {selectedConversation?.profilePicture ? (
-                  <img 
-                    src={selectedConversation.profilePicture} 
-                    alt={selectedConversation?.fullname || selectedConversation?.name}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-7xl text-[#8696A0]">
-                    {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
-                  </span>
                 )}
-              </div>
-              
-              {/* Name */}
-              <p className="text-white text-3xl font-semibold mb-2">
-                {selectedConversation?.fullname || selectedConversation?.name}
-              </p>
-              
-              {/* Status */}
-              {callEnded ? (
-                <p className="text-red-500 text-lg">Call Ended</p>
-              ) : isIncomingCall && !callAccepted ? (
-                <p className="text-[#8696A0] text-lg">Incoming call...</p>
-              ) : !isIncomingCall && !callAccepted ? (
-                <p className="text-[#8696A0] text-lg">Ringing...</p>
-              ) : callAccepted ? (
-                <p className="text-[#25D366] text-lg">Connected</p>
-              ) : null}
-              
-              {/* Calling animation */}
-              {!callAccepted && !callEnded && (
-                <div className="flex justify-center space-x-2 mt-4">
-                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </>
+            ) : !callEnded ? (
+              /* When calling (not accepted yet): Show local video full screen */
+              <>
+                {(stream || streamRef.current) && (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onLoadedMetadata={() => {
+                      console.log("📹 Local video metadata loaded (pre-accept)");
+                      if (localVideoRef.current) {
+                        localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+                      }
+                    }}
+                  />
+                )}
+                
+                {/* Dark overlay for incoming call */}
+                {isIncomingCall && (
+                  <div className="absolute inset-0 bg-black/60 z-10"></div>
+                )}
+                
+                {/* Contact info overlay when calling - centered */}
+                {!callAccepted && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+                    <div className="w-32 h-32 bg-[#313D45] rounded-full flex items-center justify-center mb-6 shadow-2xl">
+                      {selectedConversation?.profilePicture ? (
+                        <img 
+                          src={selectedConversation.profilePicture} 
+                          alt={selectedConversation?.fullname || selectedConversation?.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-5xl text-white font-semibold">
+                          {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-white text-2xl font-semibold mb-2">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                    <p className="text-white/70 text-lg">
+                      {isIncomingCall ? "Incoming video call..." : "Calling..."}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-24 h-24 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaVideo className="text-3xl text-[#8696A0]" />
+                  </div>
+                  <p className="text-white text-lg">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                  <p className="text-[#8696A0] mt-2">Call Ended</p>
                 </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {currentCallType === "audio" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#0B141A] to-[#111B21]">
+            {/* Profile Picture */}
+            <div className="w-40 h-40 bg-[#313D45] rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
+              {selectedConversation?.profilePicture ? (
+                <img 
+                  src={selectedConversation.profilePicture} 
+                  alt={selectedConversation?.fullname || selectedConversation?.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-6xl text-white font-semibold">
+                  {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
+                </span>
               )}
             </div>
-          )}
-
-          {callEnded && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-2xl text-[#8696A0] mb-2">Call Ended</p>
+            
+            {/* Name */}
+            <p className="text-white text-3xl font-semibold mb-3">
+              {selectedConversation?.fullname || selectedConversation?.name}
+            </p>
+            
+            {/* Status */}
+            {callEnded ? (
+              <p className="text-red-400 text-xl">Call Ended</p>
+            ) : isIncomingCall && !callAccepted ? (
+              <p className="text-white/70 text-xl mb-2">Incoming audio call</p>
+            ) : !isIncomingCall && !callAccepted ? (
+              <p className="text-white/70 text-xl mb-2">Ringing...</p>
+            ) : callAccepted ? (
+              <p className="text-[#25D366] text-xl">Connected</p>
+            ) : null}
+            
+            {/* Calling animation */}
+            {!callAccepted && !callEnded && (
+              <div className="flex justify-center space-x-3 mt-6">
+                <div className="w-3 h-3 bg-[#25D366] rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-3 h-3 bg-[#25D366] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
           {/* Incoming Call Accept/Reject Buttons */}
           {isIncomingCall && !callAccepted && !callEnded && (
