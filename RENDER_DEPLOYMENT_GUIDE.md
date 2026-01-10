@@ -22,10 +22,44 @@
 
 ---
 
+## ⚠️ Step 1.5: पहले से मौजूद Service को Edit/Delete करें (अगर जरूरत हो)
+
+अगर आपने पहले से service create किया है और उसे edit या delete करना है:
+
+### Option A: Service Delete करें (नया service create करने के लिए)
+
+1. Render dashboard में अपने service पर जाएं (जैसे: "ChatApp")
+2. Left sidebar में **"Settings"** tab पर click करें
+3. Page के नीचे scroll करें
+4. **"Danger Zone"** section में जाएं
+5. **"Delete Service"** button पर click करें
+6. Confirmation dialog में service name type करें
+7. **"Delete"** button पर click करें
+8. Service delete हो जाएगा
+
+### Option B: Existing Service को Edit करें
+
+1. Render dashboard में अपने service पर जाएं
+2. Left sidebar में **"Settings"** tab पर click करें
+3. यहाँ आप edit कर सकते हैं:
+   - **Name**: Service का नाम change करें
+   - **Branch**: Git branch change करें
+   - **Root Directory**: Root directory change करें
+   - **Build Command**: Build command edit करें
+   - **Start Command**: Start command edit करें
+   - **Environment Variables**: Variables add/edit/delete करें
+4. Changes save करें - Render automatically redeploy करेगा
+
+**Recommendation:** अगर पहली बार setup कर रहे हैं, तो existing service को delete करके fresh start करें।
+
+---
+
 ## 📦 Step 2: Render Dashboard में New Service Create करें
 
 1. Render dashboard में **"New +"** button पर click करें
 2. **"Web Service"** select करें
+
+**Note:** अगर पहले से service है, तो उसे delete करें (Step 1.5 देखें) या existing service को edit करें।
 
 ---
 
