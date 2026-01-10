@@ -123,3 +123,5 @@ VITE_SOCKET_URL=https://chatapp-production-810e.up.railway.app
 **Primary Frontend URL:** https://chat-app-roushan.vercel.app  
 **Backend URL:** https://chatapp-production-810e.up.railway.app
 
+
+
