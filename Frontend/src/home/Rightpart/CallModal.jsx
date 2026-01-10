@@ -915,33 +915,71 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                 )}
               </>
             ) : !callEnded ? (
-              /* When calling (not accepted yet): Show local video full screen */
+              /* When calling (not accepted yet): Show recipient profile with local video PIP */
               <>
-                {(stream || streamRef.current) && (
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onLoadedMetadata={() => {
-                      console.log("📹 Local video metadata loaded (pre-accept)");
-                      if (localVideoRef.current) {
-                        localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
-                      }
-                    }}
-                  />
+                {/* Background - recipient's profile picture or gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0B141A] to-[#111B21] flex items-center justify-center">
+                  {selectedConversation?.profilePicture ? (
+                    <img 
+                      src={selectedConversation.profilePicture} 
+                      alt={selectedConversation?.fullname || selectedConversation?.name}
+                      className="w-full h-full object-cover opacity-30"
+                    />
+                  ) : (
+                    <div className="w-64 h-64 bg-[#313D45] rounded-full flex items-center justify-center">
+                      <span className="text-9xl text-white/30 font-semibold">
+                        {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Caller info overlay - top left (Figma style) */}
+                {!isIncomingCall && (
+                  <div className="absolute top-6 left-6 z-30 bg-black/50 backdrop-blur-sm px-4 py-3 rounded-lg flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#313D45] rounded-full flex items-center justify-center flex-shrink-0">
+                      {authUser?.user?.profilePicture ? (
+                        <img 
+                          src={authUser.user.profilePicture} 
+                          alt={authUser?.user?.fullname || "You"}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg text-white">
+                          {(authUser?.user?.fullname || "You")[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">{authUser?.user?.fullname || "You"}</p>
+                      <p className="text-white/70 text-sm">Calling...</p>
+                    </div>
+                  </div>
                 )}
                 
-                {/* Dark overlay for incoming call */}
-                {isIncomingCall && (
-                  <div className="absolute inset-0 bg-black/60 z-10"></div>
+                {/* Local video as small PIP - top right (only when we have stream) */}
+                {(stream || streamRef.current) && !isIncomingCall && (
+                  <div className="absolute top-6 right-6 w-32 h-44 bg-[#0B141A] rounded-lg overflow-hidden shadow-2xl border-2 border-white/20 z-20">
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                      onLoadedMetadata={() => {
+                        console.log("📹 Local video metadata loaded (pre-accept)");
+                        if (localVideoRef.current) {
+                          localVideoRef.current.play().catch(err => console.error("Error playing local video:", err));
+                        }
+                      }}
+                    />
+                  </div>
                 )}
                 
-                {/* Contact info overlay when calling - centered */}
-                {!callAccepted && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                    <div className="w-32 h-32 bg-[#313D45] rounded-full flex items-center justify-center mb-6 shadow-2xl">
+                {/* Recipient info - centered (only when outgoing call) */}
+                {!isIncomingCall && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+                    <div className="w-40 h-40 bg-[#313D45] rounded-full flex items-center justify-center mb-6 shadow-2xl">
                       {selectedConversation?.profilePicture ? (
                         <img 
                           src={selectedConversation.profilePicture} 
@@ -949,16 +987,19 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        <span className="text-5xl text-white font-semibold">
+                        <span className="text-6xl text-white font-semibold">
                           {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
                         </span>
                       )}
                     </div>
-                    <p className="text-white text-2xl font-semibold mb-2">{selectedConversation?.fullname || selectedConversation?.name}</p>
-                    <p className="text-white/70 text-lg">
-                      {isIncomingCall ? "Incoming video call..." : "Calling..."}
-                    </p>
+                    <p className="text-white text-3xl font-semibold mb-2">{selectedConversation?.fullname || selectedConversation?.name}</p>
+                    <p className="text-white/70 text-xl">Ringing...</p>
                   </div>
+                )}
+                
+                {/* Dark overlay for incoming call */}
+                {isIncomingCall && (
+                  <div className="absolute inset-0 bg-black/60 z-10"></div>
                 )}
               </>
             ) : (
@@ -1106,7 +1147,6 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
             </button>
           </div>
         )}
-        </div>
       </div>
     </div>
   );

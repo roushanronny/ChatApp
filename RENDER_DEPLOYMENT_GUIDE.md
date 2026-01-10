@@ -104,13 +104,13 @@ mongodb+srv://myuser:mypassword123@cluster0.abc123.mongodb.net/chatapp?retryWrit
 
 ### 5.2 JWT Secret Key
 
+**EXACT VALUE - Copy यही करें:**
+
 ```
-JWT_TOKEN=your_random_secret_key_here
+JWT_TOKEN=ChatAppSecretKey2024!@#$%^&*Ronny0112
 ```
 
-**JWT Token generate करने के लिए:**
-- Terminal में run करें: `openssl rand -hex 32`
-- या कोई random string use करें (minimum 32 characters)
+**Note:** यह 32+ characters की secure secret key है जो JWT token signing के लिए use होती है।
 
 ### 5.3 Port (Optional - Render automatically set करता है)
 
@@ -122,11 +122,15 @@ PORT=10000
 
 ### 5.4 Frontend URL (Temporary - बाद में update करेंगे)
 
+**अभी के लिए (temporary):**
+
 ```
 FRONTEND_URL=http://localhost:3001
 ```
 
-**Note:** जब frontend deploy हो जाएगा, तो इसे Vercel URL से replace करेंगे।
+**बाद में (जब Vercel पर frontend deploy हो जाए):**
+- Vercel deployment के बाद actual frontend URL add करेंगे
+- Example: `FRONTEND_URL=https://your-app.vercel.app`
 
 ### 5.5 Node Environment
 
@@ -229,15 +233,20 @@ GET https://your-backend-url.onrender.com
 
 ## 📝 Complete Environment Variables List
 
-Render में add करने वाले सभी variables:
+Render में add करने वाले सभी variables (EXACT VALUES):
 
 ```
-MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/chatapp?retryWrites=true&w=majority
-JWT_TOKEN=your_random_secret_key_minimum_32_characters
+MONGODB_URI=mongodb+srv://roushanydv2003_db_user:Ronny%400112@cluster0.jik2c4j.mongodb.net/chatapp?retryWrites=true&w=majority
+JWT_TOKEN=ChatAppSecretKey2024!@#$%^&*Ronny0112
 PORT=10000
 FRONTEND_URL=https://your-frontend.vercel.app
 NODE_ENV=production
 ```
+
+**Important Notes:**
+- ✅ `MONGODB_URI`: Password में `@` symbol है, इसलिए `%40` से encoded किया गया है (`Ronny%400112`)
+- ✅ `JWT_TOKEN`: Minimum 32 characters की secret key
+- ⚠️ `FRONTEND_URL`: जब frontend Vercel पर deploy हो जाएगा, तो उसका URL यहाँ add करेंगे
 
 ---
 
