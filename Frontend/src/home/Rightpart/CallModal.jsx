@@ -997,9 +997,59 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
                   </div>
                 )}
                 
-                {/* Dark overlay for incoming call */}
-                {isIncomingCall && (
-                  <div className="absolute inset-0 bg-black/60 z-10"></div>
+                {/* Incoming Call UI - WhatsApp Style */}
+                {isIncomingCall && !callAccepted && !callEnded && (
+                  <>
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-black/70 z-10"></div>
+                    
+                    {/* Caller's video feed as background (if available) */}
+                    {remoteVideoRef.current?.srcObject && (
+                      <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover opacity-20"
+                      />
+                    )}
+                    
+                    {/* Center Content - Caller Info */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6">
+                      {/* Large Profile Picture */}
+                      <div className="w-48 h-48 bg-[#25D366] rounded-full flex items-center justify-center mb-8 shadow-2xl border-4 border-white/20">
+                        {selectedConversation?.profilePicture ? (
+                          <img 
+                            src={selectedConversation.profilePicture} 
+                            alt={selectedConversation?.fullname || selectedConversation?.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-7xl text-white font-bold">
+                            {(selectedConversation?.fullname || selectedConversation?.name || "U")[0].toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Caller Name */}
+                      <p className="text-white text-4xl font-semibold mb-3 text-center">
+                        {selectedConversation?.fullname || selectedConversation?.name}
+                      </p>
+                      
+                      {/* Call Type */}
+                      <p className="text-white/80 text-xl mb-12">
+                        {currentCallType === "video" ? "Incoming video call" : "Incoming audio call"}
+                      </p>
+                      
+                      {/* Animated Rings */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-48 h-48 rounded-full border-4 border-[#25D366]/30 animate-ping"></div>
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-56 h-56 rounded-full border-4 border-[#25D366]/20 animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </>
             ) : (
@@ -1060,13 +1110,13 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
           </div>
         )}
 
-          {/* Incoming Call Accept/Reject Buttons */}
+          {/* Incoming Call Accept/Reject Buttons - WhatsApp Style */}
           {isIncomingCall && !callAccepted && !callEnded && (
-            <div className={`bg-[#111B21] rounded-lg px-8 py-6 flex items-center justify-center space-x-6 ${currentCallType === "video" ? "absolute bottom-4 left-1/2 -translate-x-1/2 z-30" : "w-full"}`}>
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-8">
               {/* Reject Button */}
               <button
                 onClick={handleRejectCall}
-                className="bg-red-500 hover:bg-red-600 text-white p-5 rounded-full transition shadow-lg transform hover:scale-110"
+                className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl transform hover:scale-110 active:scale-95 ring-4 ring-red-500/30"
                 title="Reject Call"
               >
                 <FaPhoneSlash className="text-3xl" />
@@ -1075,7 +1125,7 @@ function CallModal({ isOpen, onClose, callType, selectedConversation, incomingCa
               {/* Accept Button */}
               <button
                 onClick={handleAcceptCall}
-                className="bg-[#25D366] hover:bg-[#20BA5A] text-white p-5 rounded-full transition shadow-lg transform hover:scale-110"
+                className="bg-[#25D366] hover:bg-[#20BA5A] active:bg-[#1DA851] text-white w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl transform hover:scale-110 active:scale-95 ring-4 ring-[#25D366]/30"
                 title="Accept Call"
               >
                 {currentCallType === "video" ? (
