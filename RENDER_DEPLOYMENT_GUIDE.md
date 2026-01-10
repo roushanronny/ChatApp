@@ -63,19 +63,25 @@ Root Directory: Backend
 
 ### 4.2 Build & Start Settings
 
+**EXACT COMMANDS (Root Directory `Backend` set किया है):**
+
 ```
 Build Command: npm install
 Start Command: node index.js
 ```
 
-या:
+**Important Notes:**
+- ✅ **Root Directory** `Backend` set करना है (ऊपर Step 4.1 में)
+- ✅ अगर Root Directory `Backend` set है, तो `cd Backend` की जरूरत **नहीं**
+- ✅ Build Command: केवल `npm install` (dependencies install करने के लिए)
+- ✅ Start Command: `node index.js` (backend start करने के लिए)
 
+**अगर Root Directory set नहीं किया है (Alternative):**
 ```
 Build Command: cd Backend && npm install
 Start Command: cd Backend && node index.js
 ```
-
-**Note:** अगर Root Directory `Backend` set किया है, तो `cd Backend` की जरूरत नहीं।
+**लेकिन Recommended:** Root Directory `Backend` set करें, फिर ऊपर वाला command use करें।
 
 ---
 
