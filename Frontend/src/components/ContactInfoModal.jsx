@@ -12,7 +12,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
   const { onlineUsers } = useSocketContext();
   const [authUser, setAuthUser] = useAuth();
   const [isEditingBio, setIsEditingBio] = useState(false);
-  const [bio, setBio] = useState(contact?.bio || "Hey there! I am using WhatsApp");
+  const [bio, setBio] = useState(contact?.bio || "Hey there! I am using Chatmate");
   const [profilePicture, setProfilePicture] = useState(contact?.profilePicture || "");
   const [isMuted, setIsMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -23,7 +23,21 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const isCurrentUser = authUser?.user?._id === contact?._id;
+  // Convert both to strings for reliable comparison
+  const isCurrentUser = String(authUser?.user?._id) === String(contact?._id);
+  
+  // Debug log to verify isCurrentUser detection
+  useEffect(() => {
+    if (contact && authUser?.user) {
+      console.log("ContactInfoModal - isCurrentUser check:", {
+        authUserId: authUser.user._id,
+        contactId: contact._id,
+        isCurrentUser: isCurrentUser,
+        authUserIdString: String(authUser.user._id),
+        contactIdString: String(contact._id)
+      });
+    }
+  }, [contact, authUser, isCurrentUser]);
   
   const defaultImage = "data:image/jpeg;base64,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";
 
@@ -32,7 +46,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       // If current user, use authUser.user data, otherwise use contact data
       const userData = isCurrentUser ? authUser?.user : contact;
       
-      const contactBio = userData?.bio || "Hey there! I am using WhatsApp";
+      const contactBio = userData?.bio || "Hey there! I am using Chatmate";
       const contactPicture = userData?.profilePicture || "";
       
       setBio(contactBio);
@@ -83,38 +97,99 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
     }
   };
 
-  const handleProfilePictureChange = (e) => {
-    if (!isCurrentUser) return;
+  const handleProfilePictureChange = async (e) => {
+    console.log("Profile picture change triggered", { isCurrentUser, contactId: contact?._id, authUserId: authUser?.user?._id });
+    
+    if (!isCurrentUser) {
+      toast.error("You can only change your own profile picture");
+      return;
+    }
     
     const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error("Please select an image file");
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newPicture = reader.result;
-        setProfilePicture(newPicture);
-        // Check if it's different from original (use current user data)
-        const originalPicture = authUser?.user?.profilePicture || "";
-        if (newPicture !== originalPicture) {
-          setHasChanges(true);
-        }
-      };
-      reader.onerror = () => {
-        toast.error("Error reading file");
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
     }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const newPicture = reader.result;
+      setProfilePicture(newPicture);
+      
+      // Auto-save profile picture immediately
+      try {
+        const token = getToken();
+        if (!token) {
+          toast.error("Please login again");
+          return;
+        }
+        
+        setLoading(true);
+        const picResponse = await axios.put(
+          getApiUrl("/api/user/updateProfilePicture"),
+          { profilePicture: newPicture },
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        console.log("Profile picture updated:", picResponse.data);
+        
+        // Update local storage
+        try {
+          const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
+          if (chatApp?.user) {
+            chatApp.user.profilePicture = newPicture;
+            localStorage.setItem("ChatApp", JSON.stringify(chatApp));
+          }
+        } catch (error) {
+          console.error("Error updating local storage:", error);
+        }
+        
+        // Update authUser state
+        if (setAuthUser && authUser?.user) {
+          setAuthUser({
+            ...authUser,
+            user: {
+              ...authUser.user,
+              profilePicture: newPicture,
+            },
+          });
+        }
+        
+        toast.success("Profile picture updated successfully!");
+        setLoading(false);
+        
+        // Refresh page to update everywhere
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
+        console.error("Error updating profile picture:", error);
+        toast.error("Failed to update profile picture: " + (error.response?.data?.error || error.message));
+        setLoading(false);
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Error reading file");
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input to allow selecting same file again
+    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -122,14 +197,12 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
     
     // Get current user data for comparison
     const currentUser = authUser?.user;
-    const currentBio = currentUser?.bio || "Hey there! I am using WhatsApp";
-    const currentPicture = currentUser?.profilePicture || "";
+    const currentBio = currentUser?.bio || "Hey there! I am using Chatmate";
     
-    // Check if there are any changes
+    // Check if there are any changes (profile picture is auto-saved, so we only check bio)
     const bioChanged = bio.trim() !== currentBio;
-    const pictureChanged = profilePicture && profilePicture !== currentPicture;
     
-    if (!bioChanged && !pictureChanged && !isEditingBio) {
+    if (!bioChanged && !isEditingBio) {
       toast.info("No changes to save");
       return;
     }
@@ -143,29 +216,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
         return;
       }
       
-      // Update profile picture
-      if (pictureChanged && profilePicture) {
-        try {
-          const picResponse = await axios.put(
-            getApiUrl("/api/user/updateProfilePicture"),
-            { profilePicture },
-            {
-              withCredentials: true,
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          console.log("Profile picture updated:", picResponse.data);
-          toast.success("Profile picture updated");
-        } catch (error) {
-          console.error("Error updating profile picture:", error);
-          toast.error("Failed to update profile picture: " + (error.response?.data?.error || error.message));
-          setLoading(false);
-          return;
-        }
-      }
+      // Profile picture is auto-saved in handleProfilePictureChange, so we only update bio here
       
       // Update bio
       if (bioChanged) {
@@ -195,9 +246,6 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       try {
         const chatApp = JSON.parse(localStorage.getItem("ChatApp"));
         if (chatApp?.user) {
-          if (pictureChanged && profilePicture) {
-            chatApp.user.profilePicture = profilePicture;
-          }
           if (bioChanged) {
             chatApp.user.bio = bio.trim();
           }
@@ -307,59 +355,68 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
       onClick={onClose}
     >
       <div 
-        className="bg-[#202C33] rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-brown-bg rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto border border-brown-medium"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#111B21] p-6 text-center">
+        <div className="bg-brown-dark p-6 text-center">
           <div className="relative inline-block">
             {isCurrentUser ? (
-              <label className="cursor-pointer">
+              <label className="cursor-pointer relative group">
                 <img 
                   src={profilePicture || authUser?.user?.profilePicture || defaultImage}
                   alt={authUser?.user?.fullname || "You"}
-                  className="w-32 h-32 rounded-full object-cover"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-brown-primary"
                 />
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleProfilePictureChange}
+                  onClick={(e) => e.target.value = null} // Reset input to allow selecting same file again
                   className="hidden"
+                  id="profile-picture-input"
                 />
-                <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#00A884] rounded-full flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+                <div className="absolute bottom-0 right-0 w-10 h-10 bg-brown-primary hover:bg-brown-dark rounded-full flex items-center justify-center shadow-lg transition-all duration-200 group-hover:scale-110">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                   </svg>
                 </div>
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-full transition-all duration-200 flex items-center justify-center">
+                  <span className="text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Change Photo
+                  </span>
+                </div>
               </label>
             ) : (
-              <img 
-                src={contact?.profilePicture || defaultImage}
-                alt={contact?.fullname || contact?.name || "Contact"}
-                className="w-32 h-32 rounded-full object-cover"
-              />
+              <div className="relative">
+                <img 
+                  src={contact?.profilePicture || defaultImage}
+                  alt={contact?.fullname || contact?.name || "Contact"}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-brown-primary"
+                />
+              </div>
             )}
             {isOnline && (
-              <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#25D366] rounded-full border-4 border-[#111B21]"></div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-4 border-brown-dark"></div>
             )}
           </div>
           <h2 className="text-white text-xl font-semibold mt-4">
             {isCurrentUser ? (authUser?.user?.fullname || "You") : (contact?.fullname || contact?.name || "Contact")}
           </h2>
-          <p className="text-[#8696A0] text-sm mt-1">
+          <p className="text-brown-dark text-sm mt-1">
             {isCurrentUser ? (onlineUsers.includes(authUser?.user?._id) ? "Online" : "Offline") : (isOnline ? "Online" : "Offline")}
           </p>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 bg-white">
           <div>
             <div className="flex items-center justify-between mb-2 px-4">
-              <h3 className="text-[#8696A0] text-xs uppercase">About</h3>
+              <h3 className="text-brown-dark text-xs uppercase">About</h3>
               {isCurrentUser && (
                 <button
                   onClick={() => {
                     if (isEditingBio) {
                       // Cancel editing - reset bio to original (from current user data)
-                      const currentBio = authUser?.user?.bio || "Hey there! I am using WhatsApp";
+                      const currentBio = authUser?.user?.bio || "Hey there! I am using Chatmate";
                       setBio(currentBio);
                       setIsEditingBio(false);
                       setHasChanges(false);
@@ -367,13 +424,13 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                       setIsEditingBio(true);
                     }
                   }}
-                  className="text-[#00A884] text-xs hover:underline"
+                  className="text-brown-primary text-xs hover:underline"
                 >
                   {isEditingBio ? "Cancel" : "Edit"}
                 </button>
               )}
             </div>
-            <div className="bg-[#111B21] px-4 py-2 rounded">
+            <div className="bg-brown-light px-4 py-2 rounded border border-brown-medium">
               {isEditingBio && isCurrentUser ? (
                 <input
                   type="text"
@@ -381,20 +438,21 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                   onChange={(e) => {
                     setBio(e.target.value);
                     // Check if different from current user's bio
-                    const currentBio = authUser?.user?.bio || "Hey there! I am using WhatsApp";
+                    const currentBio = authUser?.user?.bio || "Hey there! I am using Chatmate";
                     if (e.target.value.trim() !== currentBio) {
                       setHasChanges(true);
                     } else {
                       setHasChanges(false);
                     }
                   }}
-                  className="w-full bg-transparent text-white text-sm outline-none"
+                  className="w-full bg-transparent text-brown-text text-sm outline-none"
                   autoFocus
                   maxLength={139}
+                  placeholder="Hey there! I am using Chatmate"
                 />
               ) : (
-                <p className="text-white text-sm">
-                  {isCurrentUser ? (authUser?.user?.bio || "Hey there! I am using WhatsApp") : (contact?.bio || "Hey there! I am using WhatsApp")}
+                <p className="text-brown-text text-sm">
+                  {isCurrentUser ? (authUser?.user?.bio || "Hey there! I am using Chatmate") : (contact?.bio || "Hey there! I am using Chatmate")}
                 </p>
               )}
             </div>
@@ -402,17 +460,17 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
 
           {!isCurrentUser && (
             <div>
-              <h3 className="text-[#8696A0] text-xs uppercase mb-2 px-4">Media, Links, and Docs</h3>
+              <h3 className="text-brown-dark text-xs uppercase mb-2 px-4">Media, Links, and Docs</h3>
               <button 
                 onClick={() => setShowMedia(!showMedia)}
-                className="w-full bg-[#111B21] px-4 py-3 rounded text-left hover:bg-[#202C33] transition flex items-center justify-between"
+                className="w-full bg-brown-light px-4 py-3 rounded text-left hover:bg-brown-primary/20 transition flex items-center justify-between border border-brown-medium"
               >
-                <span className="text-white text-sm">Media ({media.length})</span>
+                <span className="text-brown-text text-sm">Media ({media.length})</span>
                 <svg 
                   viewBox="0 0 24 24" 
                   width="16" 
                   height="16" 
-                  fill="#8696A0"
+                  fill="brown-dark"
                   className={`transform transition ${showMedia ? 'rotate-180' : ''}`}
                 >
                   <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
@@ -420,11 +478,11 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
               </button>
               
               {showMedia && (
-                <div className="bg-[#111B21] px-4 py-2 space-y-2">
+                <div className="bg-brown-light px-4 py-2 space-y-2 border border-brown-medium rounded mt-2">
                   {/* Media Grid */}
                   {media.length > 0 && (
                     <div>
-                      <p className="text-[#8696A0] text-xs mb-2">Photos & Videos ({media.length})</p>
+                      <p className="text-brown-dark text-xs mb-2">Photos & Videos ({media.length})</p>
                       <div className="grid grid-cols-3 gap-2">
                         {media.slice(0, 9).map((item) => (
                           <div key={item._id} className="aspect-square rounded overflow-hidden">
@@ -442,7 +500,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                   {/* Links */}
                   {links.length > 0 && (
                     <div className="pt-2">
-                      <p className="text-[#8696A0] text-xs mb-2">Links ({links.length})</p>
+                      <p className="text-brown-dark text-xs mb-2">Links ({links.length})</p>
                       <div className="space-y-1">
                         {links.slice(0, 5).map((link) => (
                           <a 
@@ -450,7 +508,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                             href={link.links[0]} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-[#00A884] text-sm block truncate hover:underline"
+                            className="text-brown-primary text-sm block truncate hover:underline"
                           >
                             {link.links[0]}
                           </a>
@@ -462,10 +520,10 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                   {/* Docs */}
                   {docs.length > 0 && (
                     <div className="pt-2">
-                      <p className="text-[#8696A0] text-xs mb-2">Documents ({docs.length})</p>
+                      <p className="text-brown-dark text-xs mb-2">Documents ({docs.length})</p>
                       <div className="space-y-1">
                         {docs.slice(0, 5).map((doc) => (
-                          <div key={doc._id} className="text-white text-sm truncate">
+                          <div key={doc._id} className="text-brown-text text-sm truncate">
                             {doc.message || "Document"}
                           </div>
                         ))}
@@ -474,7 +532,7 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
                   )}
                   
                   {media.length === 0 && links.length === 0 && docs.length === 0 && (
-                    <p className="text-[#8696A0] text-sm text-center py-4">No media, links, or documents</p>
+                    <p className="text-brown-dark text-sm text-center py-4">No media, links, or documents</p>
                   )}
                 </div>
               )}
@@ -485,13 +543,13 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
             <div className="space-y-1">
               <button 
                 onClick={handleMuteToggle}
-                className="w-full bg-[#111B21] px-4 py-3 rounded text-left hover:bg-[#202C33] transition"
+                className="w-full bg-brown-light px-4 py-3 rounded text-left hover:bg-brown-primary/20 transition border border-brown-medium"
               >
                 <span className="text-red-500 text-sm">{isMuted ? "Unmute notifications" : "Mute notifications"}</span>
               </button>
               <button 
                 onClick={handleBlockToggle}
-                className="w-full bg-[#111B21] px-4 py-3 rounded text-left hover:bg-[#202C33] transition"
+                className="w-full bg-brown-light px-4 py-3 rounded text-left hover:bg-brown-primary/20 transition border border-brown-medium"
               >
                 <span className="text-red-500 text-sm">{isBlocked ? "Unblock" : "Block"}</span>
               </button>
@@ -504,8 +562,8 @@ function ContactInfoModal({ isOpen, onClose, contact }) {
               disabled={loading || (!hasChanges && !isEditingBio)}
               className={`w-full text-white py-3 rounded transition ${
                 hasChanges || isEditingBio
-                  ? "bg-[#00A884] hover:bg-[#06cf9c] disabled:opacity-50"
-                  : "bg-[#313D45] cursor-not-allowed opacity-50"
+                  ? "bg-brown-primary hover:bg-brown-dark disabled:opacity-50"
+                  : "bg-brown-medium cursor-not-allowed opacity-50"
               }`}
             >
               {loading ? "Saving..." : "Save Changes"}

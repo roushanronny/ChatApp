@@ -10,6 +10,11 @@ const userSchema = mongoose.Schema({
         required: true,
         unique: true,
     },
+    phone: {
+        type: String,
+        default: "",
+        sparse: true, // Allows multiple null values but unique for non-null values
+    },
     password: {
         type: String,
         required: true,

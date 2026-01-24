@@ -1,8 +1,7 @@
 import React from "react";
 import Left from "./home/Leftpart/Left";
 import Right from "./home/Rightpart/Right";
-import Signup from "./components/Signup";
-import Login from "./components/Login";
+import Auth from "./components/Auth";
 import { useAuth } from "./context/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import Logout from "./home/left1/Logout";
@@ -33,7 +32,7 @@ function MainLayout() {
       {activeView === "settings" && <SettingsView />}
       {activeView === "archived" && <ArchivedView />}
       {activeView === "communities" && (
-        <div className="w-full bg-[#0B141A] flex items-center justify-center text-[#8696A0]">
+        <div className="w-full bg-brown-bg flex items-center justify-center text-brown-dark">
           Communities feature coming soon
         </div>
       )}
@@ -43,7 +42,6 @@ function MainLayout() {
 
 function App() {
   const [authUser, setAuthUser] = useAuth();
-  console.log(authUser);
   return (
     <>
       <Routes>
@@ -59,11 +57,11 @@ function App() {
         />
         <Route
           path="/login"
-          element={authUser ? <Navigate to="/" /> : <Login />}
+          element={authUser ? <Navigate to="/" /> : <Auth />}
         />
         <Route
           path="/signup"
-          element={authUser ? <Navigate to="/" /> : <Signup />}
+          element={authUser ? <Navigate to="/" /> : <Auth />}
         />
       </Routes>
       <Toaster />

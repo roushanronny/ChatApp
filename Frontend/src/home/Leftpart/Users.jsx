@@ -26,7 +26,7 @@ function Users({ activeTab = "all" }) {
   
   if (loading) {
     return (
-      <div className="px-8 py-2 text-white font-semibold">
+      <div className="px-8 py-2 text-brown-text font-semibold">
         Loading users...
       </div>
     );
@@ -39,7 +39,7 @@ function Users({ activeTab = "all" }) {
           <User key={user._id || index} user={user} />
         ))
       ) : (
-        <div className="px-4 py-8 text-center text-[#8696A0]">
+        <div className="px-4 py-8 text-center text-brown-dark">
           {activeTab === "favourites" 
             ? "No favourite chats" 
             : activeTab === "groups" 

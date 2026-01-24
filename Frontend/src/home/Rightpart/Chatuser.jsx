@@ -166,14 +166,14 @@ function Chatuser({ searchQuery, setSearchQuery }) {
   return (
     <>
       {showSearch && (
-        <div className="bg-[#202C33] px-4 py-2 border-b border-[#313D45] search-container">
+        <div className="bg-white px-4 py-2 border-b border-brown-light search-container">
           <div className="flex items-center space-x-2">
             <button
               onClick={() => {
                 setShowSearch(false);
                 setSearchQuery("");
               }}
-              className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+              className="p-2 text-brown-dark hover:bg-brown-light rounded-full transition"
             >
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -185,11 +185,11 @@ function Chatuser({ searchQuery, setSearchQuery }) {
               placeholder="Search in conversation"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-[#2A3942] text-white placeholder-[#8696A0] rounded-lg px-4 py-2 text-sm outline-none"
+              className="flex-1 bg-brown-light text-brown-text placeholder-brown-dark rounded-lg px-4 py-2 text-sm outline-none"
               autoFocus
             />
             {searchQuery && (
-              <span className="text-[#8696A0] text-xs">
+              <span className="text-brown-dark text-xs">
                 {filteredMessages.length} {filteredMessages.length === 1 ? 'message' : 'messages'} found
               </span>
             )}
@@ -197,7 +197,7 @@ function Chatuser({ searchQuery, setSearchQuery }) {
         </div>
       )}
 
-      <div className="h-14 bg-[#202C33] flex items-center justify-between px-4 py-2 border-b border-[#313D45]">
+      <div className="h-14 bg-brown-primary flex items-center justify-between px-4 py-2 border-b border-brown-medium">
         <div 
           className="flex items-center space-x-3 cursor-pointer flex-1 min-w-0"
           onClick={() => setShowContactInfo(true)}
@@ -211,14 +211,14 @@ function Chatuser({ searchQuery, setSearchQuery }) {
               />
             </div>
             {getOnlineUsersStatus(selectedConversation._id) === "Online" && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#53BDEB] rounded-full border-2 border-[#202C33]"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#53BDEB] rounded-full border-2 border-brown-primary"></div>
             )}
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="text-white text-base font-medium truncate">
               {selectedConversation.fullname || selectedConversation.name}
             </h1>
-            <span className="text-[#8696A0] text-xs">
+            <span className="text-white/80 text-xs">
               {getOnlineUsersStatus(selectedConversation._id)}
             </span>
           </div>
@@ -227,21 +227,21 @@ function Chatuser({ searchQuery, setSearchQuery }) {
         <div className="flex items-center space-x-1">
           <button 
             onClick={() => setShowSearch(!showSearch)}
-            className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+            className="p-2 text-white hover:bg-brown-medium rounded-full transition"
             title="Search"
           >
             <FaSearch className="text-lg" />
           </button>
           <button 
             onClick={() => handleCall("video")}
-            className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+            className="p-2 text-white hover:bg-brown-medium rounded-full transition"
             title="Video Call"
           >
             <FaVideo className="text-lg" />
           </button>
           <button 
             onClick={() => handleCall("audio")}
-            className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+            className="p-2 text-white hover:bg-brown-medium rounded-full transition"
             title="Audio Call"
           >
             <FaPhone className="text-lg" />
@@ -249,35 +249,35 @@ function Chatuser({ searchQuery, setSearchQuery }) {
           <div className="relative" ref={menuRef}>
             <button 
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+              className="p-2 text-white hover:bg-brown-medium rounded-full transition"
               title="More options"
             >
               <FaEllipsisVertical className="text-lg" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-[#233138] rounded-lg shadow-2xl z-50 min-w-[200px] py-2">
+              <div className="absolute right-0 top-full mt-1 bg-white border border-brown-light rounded-lg shadow-2xl z-50 min-w-[200px] py-2">
                 <button
                   onClick={() => handleMenuAction("clear")}
-                  className="w-full text-left px-4 py-2 text-white text-sm hover:bg-[#182229] transition"
+                  className="w-full text-left px-4 py-2 text-brown-text text-sm hover:bg-brown-light transition"
                 >
                   Clear chat
                 </button>
                 <button
                   onClick={() => handleMenuAction("mute")}
-                  className="w-full text-left px-4 py-2 text-white text-sm hover:bg-[#182229] transition"
+                  className="w-full text-left px-4 py-2 text-brown-text text-sm hover:bg-brown-light transition"
                 >
                   Mute notifications
                 </button>
                 <button
                   onClick={() => handleMenuAction("export")}
-                  className="w-full text-left px-4 py-2 text-white text-sm hover:bg-[#182229] transition"
+                  className="w-full text-left px-4 py-2 text-brown-text text-sm hover:bg-brown-light transition"
                 >
                   Export chat
                 </button>
-                <div className="border-t border-[#313D45] my-1"></div>
+                <div className="border-t border-brown-light my-1"></div>
                 <button
                   onClick={() => handleMenuAction("delete")}
-                  className="w-full text-left px-4 py-2 text-red-500 text-sm hover:bg-[#182229] transition"
+                  className="w-full text-left px-4 py-2 text-red-600 text-sm hover:bg-brown-light transition"
                 >
                   Delete chat
                 </button>

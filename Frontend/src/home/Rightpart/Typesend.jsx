@@ -660,14 +660,14 @@ function Typesend() {
   };
 
   return (
-    <div className="bg-[#202C33] border-t border-[#313D45] relative">
+    <div className="bg-white border-t border-brown-light relative">
       {replyTo && (
-        <div className="bg-[#2A3942] px-4 py-2 mx-3 mb-2 rounded-lg border-l-4 border-[#00A884] flex items-center justify-between">
+        <div className="bg-brown-light px-4 py-2 mx-3 mb-2 rounded-lg border-l-4 border-brown-primary flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <div className="text-[#00A884] text-xs font-medium mb-0.5">
+            <div className="text-brown-primary text-xs font-medium mb-0.5">
               Replying to {replyTo.senderId?.fullname || "message"}
             </div>
-            <div className="text-[#8696A0] text-xs truncate">
+            <div className="text-brown-dark text-xs truncate">
               {replyTo.messageType === "image" ? "📷 Image" : 
                replyTo.messageType === "video" ? "🎥 Video" :
                replyTo.messageType === "audio" ? "🎤 Audio" :
@@ -676,7 +676,7 @@ function Typesend() {
           </div>
           <button
             onClick={removeReply}
-            className="ml-2 text-[#8696A0] hover:text-white transition"
+            className="ml-2 text-brown-dark hover:text-brown-text transition"
           >
             <FaTimes />
           </button>
@@ -684,7 +684,7 @@ function Typesend() {
       )}
 
       {(filePreview || selectedFile) && (
-        <div className="relative bg-[#202C33] p-3 mx-3 mb-2 rounded-lg border border-[#313D45]">
+        <div className="relative bg-white p-3 mx-3 mb-2 rounded-lg border border-brown-light shadow-sm">
           <button
             onClick={removeFile}
             className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 z-10"
@@ -697,12 +697,12 @@ function Typesend() {
             <video src={filePreview} className="max-h-40 rounded-lg w-full" controls />
           ) : selectedFile ? (
             <div className="flex items-center space-x-3 p-2">
-              <div className="w-12 h-12 bg-[#313D45] rounded-lg flex items-center justify-center">
-                <FaFile className="text-2xl text-[#8696A0]" />
+              <div className="w-12 h-12 bg-brown-light rounded-lg flex items-center justify-center">
+                <FaFile className="text-2xl text-brown-dark" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium truncate">{selectedFile.name}</p>
-                <p className="text-[#8696A0] text-xs">
+                <p className="text-brown-text text-sm font-medium truncate">{selectedFile.name}</p>
+                <p className="text-brown-dark text-xs">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -721,12 +721,12 @@ function Typesend() {
       )}
 
       {showEmojiPicker && (
-        <div className="emoji-picker-container absolute bottom-16 left-16 bg-[#233138] rounded-lg shadow-2xl z-50 p-3 grid grid-cols-6 gap-2 max-w-[250px]">
+        <div className="emoji-picker-container absolute bottom-16 left-16 bg-white border border-brown-light rounded-lg shadow-2xl z-50 p-3 grid grid-cols-6 gap-2 max-w-[250px]">
           {commonEmojis.map((emoji, idx) => (
             <button
               key={idx}
               onClick={() => handleEmojiClick(emoji)}
-              className="text-2xl hover:bg-[#182229] rounded p-2 transition"
+              className="text-2xl hover:bg-brown-light rounded p-2 transition"
             >
               {emoji}
             </button>
@@ -740,7 +740,7 @@ function Typesend() {
             <button
               type="button"
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-              className="p-2 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+              className="p-2 text-brown-dark hover:bg-brown-light rounded-full transition"
               title="Attach"
             >
               <FaPaperclip className="text-xl rotate-45" />
@@ -776,7 +776,7 @@ function Typesend() {
             />
           </div>
           
-          <div className="flex-1 flex items-center bg-[#2A3942] rounded-lg px-3 py-2">
+          <div className="flex-1 flex items-center bg-brown-light rounded-lg px-3 py-2">
             <input
               type="text"
               placeholder="Type a message"
@@ -786,12 +786,12 @@ function Typesend() {
                 handleTyping();
               }}
               onKeyPress={handleKeyPress}
-              className="flex-1 bg-transparent text-white placeholder-[#8696A0] outline-none text-sm"
+              className="flex-1 bg-transparent text-brown-text placeholder-brown-dark outline-none text-sm"
             />
             <button 
               type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-1 text-[#8696A0] hover:bg-[#313D45] rounded-full transition"
+              className="p-1 text-brown-dark hover:bg-white rounded-full transition"
               title="Emoji"
             >
               <FaSmile className="text-xl" />
@@ -802,7 +802,7 @@ function Typesend() {
             <button
               type="submit"
               disabled={loading}
-              className="p-3 text-[#8696A0] hover:bg-[#313D45] rounded-full transition disabled:opacity-50"
+              className="p-3 text-brown-dark hover:bg-brown-light rounded-full transition disabled:opacity-50"
               title="Send"
             >
               <IoSend className="text-xl" />
@@ -827,7 +827,7 @@ function Typesend() {
               <button
                 type="button"
                 onClick={sendRecording}
-                className="p-3 bg-[#00A884] hover:bg-[#00B894] text-white rounded-full transition"
+                className="p-3 bg-brown-primary hover:bg-brown-dark text-white rounded-full transition"
                 title="Send Recording"
               >
                 <FaCheckCircle className="text-xl" />
@@ -853,7 +853,7 @@ function Typesend() {
               className={`p-3 rounded-full transition ${
                 isRecording 
                   ? "bg-red-500 text-white animate-pulse" 
-                  : "text-[#8696A0] hover:bg-[#313D45]"
+                  : "text-brown-dark hover:bg-brown-light"
               } disabled:opacity-50`}
               title={isRecording ? "Recording... Release to send" : "Hold to record"}
             >

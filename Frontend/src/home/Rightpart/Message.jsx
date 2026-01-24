@@ -485,7 +485,7 @@ function Message({ message }) {
             </svg>
             <div className="flex-1 min-w-0">
               <p className="text-[#111B21] text-sm font-medium truncate">{fileName}</p>
-              <p className="text-[#00A884] text-xs">Click to download</p>
+              <p className="text-brown-primary text-xs">Click to download</p>
             </div>
           </div>
         </div>
@@ -539,15 +539,15 @@ function Message({ message }) {
               {message.isStarred && (
                 <FaStar className="text-[#FFC107] text-[10px]" title="Starred" />
               )}
-              <span className="text-[#667781] text-[11px] leading-tight">{formattedTime}</span>
+              <span className="text-brown-dark text-[11px] leading-tight">{formattedTime}</span>
               {itsMe && (
                 <span className="flex items-center ml-1">
                   {message.isSeen ? (
-                    <FaCheckDouble className="text-[#53BDEB] text-[11px]" title="Seen" />
+                    <FaCheckDouble className="text-red-500 text-[11px]" title="Seen" />
                   ) : message.isDelivered ? (
-                    <FaCheckDouble className="text-[#667781] text-[11px]" title="Delivered" />
+                    <FaCheckDouble className="text-brown-primary text-[11px]" title="Delivered" />
                   ) : (
-                    <FaCheck className="text-[#667781] text-[11px]" title="Sent" />
+                    <FaCheck className="text-brown-dark text-[11px]" title="Sent" />
                   )}
                 </span>
               )}

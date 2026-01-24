@@ -66,7 +66,7 @@ function Messages({ searchQuery = "" }) {
 
   return (
     <div
-      className="h-full overflow-y-auto overflow-x-hidden px-4 py-2 bg-[#0B141A] relative"
+      className="h-full overflow-y-auto overflow-x-hidden px-4 py-2 bg-brown-bg relative"
       style={{ 
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='whatsapp-pattern' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 100 0 L 0 0 0 100' fill='none' stroke='%23444547' stroke-width='0.5' opacity='0.08'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23whatsapp-pattern)'/%3E%3C/svg%3E")`,
         minHeight: '100%',
@@ -79,8 +79,8 @@ function Messages({ searchQuery = "" }) {
             <svg viewBox="0 0 24 24" width="16" height="16" fill="#54656F">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
             </svg>
-            <span className="text-[#54656F] text-xs font-medium">
-              Messages are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Click to learn more.
+            <span className="text-brown-text text-xs font-medium">
+              Messages are end-to-end encrypted. No one outside of this chat, not even Chatmate, can read or listen to them. Click to learn more.
             </span>
           </div>
         </div>
@@ -102,9 +102,9 @@ function Messages({ searchQuery = "" }) {
           <div className="flex flex-col max-w-[65%] items-start">
             <div className="bg-white rounded-lg rounded-tl-none px-3 py-2 shadow-sm">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-[#667781] rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-[#667781] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-[#667781] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-brown-dark rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-brown-dark rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-brown-dark rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ function Messages({ searchQuery = "" }) {
       {isBlocked && (
         <div className="flex items-center justify-center py-4">
           <div className="bg-[#FEF9E7] px-4 py-3 rounded-lg max-w-md text-center">
-            <p className="text-[#54656F] text-sm font-medium">
+            <p className="text-brown-text text-sm font-medium">
               ⚠️ This user is blocked. You cannot send or receive messages from them.
             </p>
           </div>
@@ -133,7 +133,7 @@ function Messages({ searchQuery = "" }) {
       {!loading && filteredMessages.length === 0 && !isTyping && safeMessages.length === 0 && !isBlocked && (
         <div className="flex items-center justify-center h-full -mt-20">
           <div className="text-center">
-            <p className="text-[#667781] text-lg">
+            <p className="text-brown-dark text-lg">
               Say! Hi to start the conversation
             </p>
           </div>

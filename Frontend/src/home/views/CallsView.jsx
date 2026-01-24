@@ -63,9 +63,9 @@ function CallsView() {
   const getCallIcon = (call) => {
     const isOutgoing = call.callerId._id === authUser?.user?._id;
     if (call.callType === "video") {
-      return <FaVideo className={isOutgoing ? "text-[#8696A0]" : "text-[#8696A0]"} />;
+      return <FaVideo className={isOutgoing ? "text-brown-dark" : "text-brown-dark"} />;
     }
-    return <FaPhone className={isOutgoing ? "text-[#8696A0]" : "text-[#8696A0]"} />;
+    return <FaPhone className={isOutgoing ? "text-brown-dark" : "text-brown-dark"} />;
   };
 
   const getCallLabel = (call) => {
@@ -75,9 +75,9 @@ function CallsView() {
   };
 
   const getStatusColor = (status) => {
-    if (status === "ended" || status === "answered") return "text-[#8696A0]";
+    if (status === "ended" || status === "answered") return "text-brown-dark";
     if (status === "missed") return "text-red-500";
-    return "text-[#8696A0]";
+    return "text-brown-dark";
   };
 
   const getStatusLabel = (call) => {
@@ -87,17 +87,17 @@ function CallsView() {
   };
 
   return (
-    <div className="w-full bg-[#0B141A] text-gray-300 flex h-screen">
+    <div className="w-full bg-brown-bg text-brown-text flex h-screen">
       {/* Left Panel - Call History */}
-      <div className="w-[30%] bg-[#111B21] flex flex-col border-r border-[#313D45]">
-      <div className="bg-[#202C33] px-4 py-3 border-b border-[#313D45]">
+      <div className="w-[30%] bg-brown-light flex flex-col border-r border-brown-medium">
+      <div className="bg-brown-primary px-4 py-3 border-b border-brown-medium">
           <div className="flex items-center justify-between">
         <h1 className="font-semibold text-lg text-white">Calls</h1>
             <div className="flex items-center space-x-3">
-              <button className="text-[#8696A0] hover:text-white transition">
+              <button className="text-white hover:text-brown-light transition">
                 <FaPhone className="text-xl" />
               </button>
-              <button className="text-[#8696A0] hover:text-white transition">
+              <button className="text-white hover:text-brown-light transition">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                   <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
                 </svg>
@@ -107,32 +107,32 @@ function CallsView() {
       </div>
         
         {/* Search Bar */}
-        <div className="bg-[#202C33] px-4 py-2 border-b border-[#313D45]">
-          <div className="flex items-center bg-[#2A3942] rounded-lg px-3 py-2">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#8696A0">
+        <div className="bg-white px-4 py-2 border-b border-brown-light">
+          <div className="flex items-center bg-brown-light rounded-lg px-3 py-2">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="brown-dark">
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
             </svg>
             <input
               type="text"
               placeholder="Q Search"
-              className="bg-transparent text-white placeholder-[#8696A0] ml-3 flex-1 outline-none"
+              className="bg-transparent text-brown-text placeholder-brown-dark ml-3 flex-1 outline-none"
             />
           </div>
         </div>
       
         {/* Favourites Section */}
-        <div className="px-4 py-3 border-b border-[#313D45]">
-          <h2 className="text-[#8696A0] text-sm font-medium mb-2">Favourites</h2>
-          <button className="flex items-center space-x-3 w-full bg-[#00A884] hover:bg-[#00B894] text-white px-4 py-2 rounded-lg transition">
+        <div className="px-4 py-3 border-b border-brown-light bg-white">
+          <h2 className="text-brown-dark text-sm font-medium mb-2">Favourites</h2>
+          <button className="flex items-center space-x-3 w-full bg-brown-primary hover:bg-brown-dark text-white px-4 py-2 rounded-lg transition">
             <FaPlus className="text-sm" />
             <span className="text-sm font-medium">Add favourite</span>
           </button>
         </div>
 
         {/* Recent Calls */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-3 border-b border-[#313D45]">
-            <h2 className="text-[#8696A0] text-sm font-medium">Recent</h2>
+        <div className="flex-1 overflow-y-auto bg-white">
+          <div className="px-4 py-3 border-b border-brown-light">
+            <h2 className="text-brown-dark text-sm font-medium">Recent</h2>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -141,7 +141,7 @@ function CallsView() {
           ) : calls.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <p className="text-[#8696A0] text-sm">No call history</p>
+                <p className="text-brown-dark text-sm">No call history</p>
               </div>
             </div>
           ) : (
@@ -153,7 +153,7 @@ function CallsView() {
             return (
               <div
                 key={call._id}
-                className="hover:bg-[#2A3942] transition-colors border-b border-[#313D45] cursor-pointer"
+                className="hover:bg-brown-light transition-colors border-b border-brown-medium cursor-pointer bg-white"
               >
                 <div className="flex items-center space-x-3 px-4 py-3">
                   <div className="relative flex-shrink-0">
@@ -167,7 +167,7 @@ function CallsView() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h1 className="text-white text-base font-medium truncate">
+                      <h1 className="text-brown-text text-base font-medium truncate">
                         {getCallLabel(call)}
                       </h1>
                       <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
@@ -185,7 +185,7 @@ function CallsView() {
                       <span className={`text-sm ${getStatusColor(call.status)}`}>
                         {getStatusLabel(call)}
                       </span>
-                      <span className="text-[#8696A0] text-xs">
+                      <span className="text-brown-dark text-xs">
                         {formatDate(call.createdAt)} • {formatTime(call.createdAt)}
                       </span>
                     </div>
@@ -198,26 +198,26 @@ function CallsView() {
       </div>
 
       {/* Right Panel - Call Options */}
-      <div className="flex-1 bg-[#0B141A] flex items-center justify-center relative">
+      <div className="flex-1 bg-brown-bg flex items-center justify-center relative">
         <div className="grid grid-cols-2 gap-6 max-w-2xl p-8">
-          <button className="flex flex-col items-center justify-center bg-[#2A3942] hover:bg-[#313D45] rounded-lg p-6 transition space-y-3">
-            <FaVideo className="text-4xl text-[#8696A0]" />
-            <span className="text-white text-sm font-medium">Start call</span>
+          <button className="flex flex-col items-center justify-center bg-white hover:bg-brown-light rounded-lg p-6 transition space-y-3 shadow-sm border border-brown-light">
+            <FaVideo className="text-4xl text-brown-dark" />
+            <span className="text-brown-text text-sm font-medium">Start call</span>
           </button>
-          <button className="flex flex-col items-center justify-center bg-[#2A3942] hover:bg-[#313D45] rounded-lg p-6 transition space-y-3">
-            <FaLink className="text-4xl text-[#8696A0]" />
-            <span className="text-white text-sm font-medium">New call link</span>
+          <button className="flex flex-col items-center justify-center bg-white hover:bg-brown-light rounded-lg p-6 transition space-y-3 shadow-sm border border-brown-light">
+            <FaLink className="text-4xl text-brown-dark" />
+            <span className="text-brown-text text-sm font-medium">New call link</span>
           </button>
-          <button className="flex flex-col items-center justify-center bg-[#2A3942] hover:bg-[#313D45] rounded-lg p-6 transition space-y-3">
-            <FaKeyboard className="text-4xl text-[#8696A0]" />
-            <span className="text-white text-sm font-medium">Call a number</span>
+          <button className="flex flex-col items-center justify-center bg-white hover:bg-brown-light rounded-lg p-6 transition space-y-3 shadow-sm border border-brown-light">
+            <FaKeyboard className="text-4xl text-brown-dark" />
+            <span className="text-brown-text text-sm font-medium">Call a number</span>
           </button>
-          <button className="flex flex-col items-center justify-center bg-[#2A3942] hover:bg-[#313D45] rounded-lg p-6 transition space-y-3">
-            <FaCalendar className="text-4xl text-[#8696A0]" />
-            <span className="text-white text-sm font-medium">Schedule call</span>
+          <button className="flex flex-col items-center justify-center bg-white hover:bg-brown-light rounded-lg p-6 transition space-y-3 shadow-sm border border-brown-light">
+            <FaCalendar className="text-4xl text-brown-dark" />
+            <span className="text-brown-text text-sm font-medium">Schedule call</span>
           </button>
         </div>
-        <div className="absolute bottom-4 right-4 flex items-center space-x-1 text-[#667781] text-xs">
+        <div className="absolute bottom-4 right-4 flex items-center space-x-1 text-brown-dark text-xs">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
           </svg>

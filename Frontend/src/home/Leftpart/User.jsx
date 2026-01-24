@@ -145,9 +145,9 @@ function User({ user }) {
       <div
         ref={userRef}
         onContextMenu={handleRightClick}
-        className={`hover:bg-[#2A3942] transition-colors ${
-          isSelected ? "bg-[#2A3942]" : ""
-        } cursor-pointer border-b border-[#313D45]`}
+        className={`hover:bg-brown-light transition-colors ${
+          isSelected ? "bg-brown-light" : ""
+        } cursor-pointer border-b border-brown-medium bg-white`}
         onClick={() => !isCurrentUser && setSelectedConversation(user)}
       >
         <div className="flex items-center space-x-3 px-4 py-2">
@@ -168,24 +168,24 @@ function User({ user }) {
               />
             </div>
             {isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#53BDEB] rounded-full border-2 border-[#111B21]"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#53BDEB] rounded-full border-2 border-white"></div>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h1 className="text-white text-base font-medium truncate">
+              <h1 className="text-brown-text text-base font-medium truncate">
                 {user.fullname || user.name}
               </h1>
-              <span className="text-[#8696A0] text-xs ml-2 flex-shrink-0">
+              <span className="text-brown-dark text-xs ml-2 flex-shrink-0">
                 {user.lastMessageTime || "17:44"}
               </span>
             </div>
             <div className="flex items-center justify-between mt-0.5">
-              <span className="text-[#8696A0] text-sm truncate block flex-1">
+              <span className="text-brown-dark text-sm truncate block flex-1">
                 {user.lastMessage || "Tap to start conversation"}
               </span>
               {user.unreadCount > 0 && (
-                <span className="ml-2 bg-[#25D366] text-white text-xs font-semibold rounded-full px-2 py-0.5 flex-shrink-0">
+                <span className="ml-2 bg-brown-primary text-white text-xs font-semibold rounded-full px-2 py-0.5 flex-shrink-0">
                   {user.unreadCount}
                 </span>
               )}
@@ -197,11 +197,11 @@ function User({ user }) {
       {/* Profile Picture Update Modal */}
       {showProfileModal && isCurrentUser && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" onClick={() => setShowProfileModal(false)}>
-          <div className="bg-[#202C33] p-6 rounded-lg max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-white text-xl mb-4 font-semibold">Change Profile Picture</h2>
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4 shadow-lg border border-brown-light" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-brown-text text-xl mb-4 font-semibold">Change Profile Picture</h2>
             <div className="mb-4">
               <label className="block">
-                <div className="bg-[#2A3942] hover:bg-[#313D45] text-white px-4 py-2 rounded-lg cursor-pointer text-center transition">
+                <div className="bg-brown-primary hover:bg-brown-dark text-white px-4 py-2 rounded-lg cursor-pointer text-center transition">
                   Choose Photo
                 </div>
                 <input
@@ -224,7 +224,7 @@ function User({ user }) {
             <div className="flex gap-4 justify-end">
               <button
                 onClick={() => setShowProfileModal(false)}
-                className="px-4 py-2 bg-[#2A3942] hover:bg-[#313D45] text-white rounded-lg transition"
+                className="px-4 py-2 bg-brown-light hover:bg-brown-medium text-brown-text rounded-lg transition"
               >
                 Cancel
               </button>

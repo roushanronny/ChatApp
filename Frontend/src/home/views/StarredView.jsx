@@ -63,25 +63,25 @@ function StarredView() {
   }, {});
 
   return (
-    <div className="w-full bg-[#0B141A] text-gray-300 flex flex-col h-screen">
-      <div className="bg-[#202C33] px-4 py-3 border-b border-[#313D45]">
+    <div className="w-full bg-brown-bg text-brown-text flex flex-col h-screen">
+      <div className="bg-brown-primary px-4 py-3 border-b border-brown-medium">
         <h1 className="font-semibold text-lg text-white">Starred Messages</h1>
       </div>
       
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-[#8696A0]">Loading starred messages...</div>
+          <div className="text-brown-dark">Loading starred messages...</div>
         </div>
       ) : starredMessages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="mb-4">
-              <svg viewBox="0 0 24 24" width="100" height="100" fill="#8696A0" opacity="0.4">
+              <svg viewBox="0 0 24 24" width="100" height="100" fill="brown-dark" opacity="0.4">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
               </svg>
             </div>
-            <h2 className="text-[#E9EDEF] text-xl font-light mb-2">No Starred Messages</h2>
-            <p className="text-[#8696A0] text-sm">
+            <h2 className="text-brown-text text-xl font-light mb-2">No Starred Messages</h2>
+            <p className="text-brown-dark text-sm">
               Messages you star will appear here
             </p>
           </div>
@@ -90,11 +90,11 @@ function StarredView() {
         <div className="flex-1 overflow-y-auto">
           {Object.entries(groupedMessages).map(([date, messages]) => (
             <div key={date} className="px-4 py-2">
-              <div className="text-[#8696A0] text-xs text-center mb-2">{date}</div>
+              <div className="text-brown-dark text-xs text-center mb-2">{date}</div>
               {messages.map((message) => (
                 <div
                   key={message._id}
-                  className="mb-4 p-3 bg-[#202C33] rounded-lg cursor-pointer hover:bg-[#2A3942] transition"
+                  className="mb-4 p-3 bg-white rounded-lg cursor-pointer hover:bg-brown-light transition shadow-sm border border-brown-light"
                   onClick={() => handleMessageClick(message)}
                 >
                   <div className="flex items-center space-x-3 mb-2">
@@ -110,12 +110,12 @@ function StarredView() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-white text-sm font-medium">
+                      <div className="text-brown-text text-sm font-medium">
                         {message.senderId._id === JSON.parse(localStorage.getItem("ChatApp"))?.user?._id
                           ? message.receiverId?.fullname || "Unknown"
                           : message.senderId?.fullname || "Unknown"}
                       </div>
-                      <div className="text-[#8696A0] text-xs">
+                      <div className="text-brown-dark text-xs">
                         {new Date(message.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -124,7 +124,7 @@ function StarredView() {
                     </div>
                   </div>
                   <div className="pl-[52px]">
-                    <div className="bg-[#111B21] rounded-lg p-2">
+                    <div className="bg-brown-light rounded-lg p-2">
                       {message.messageType === "image" && message.mediaUrl ? (
                         <img 
                           src={message.mediaUrl} 
@@ -138,9 +138,9 @@ function StarredView() {
                           className="max-w-xs rounded-lg mb-1"
                         />
                       ) : (
-                        <p className="text-white text-sm">{message.message || "Message"}</p>
+                        <p className="text-brown-text text-sm">{message.message || "Message"}</p>
                       )}
-                      <div className="text-[#8696A0] text-xs mt-1">
+                      <div className="text-brown-dark text-xs mt-1">
                         {new Date(message.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",

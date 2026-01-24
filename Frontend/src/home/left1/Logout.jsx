@@ -46,71 +46,71 @@ function Logout() {
   };
   
   return (
-    <div className="w-16 bg-[#0B141A] text-white flex flex-col items-center py-2 border-r border-[#313D45]">
+    <div className="w-16 bg-brown-light text-brown-text flex flex-col items-center py-2 border-r border-brown-medium">
       <div className="flex flex-col items-center space-y-4 flex-1">
         <button
           onClick={() => handleNavClick("chats")}
           className={`p-3 rounded-lg transition ${
-            activeView === "chats" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "chats" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Chats"
         >
-          <FaComments className={`text-2xl ${activeView === "chats" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaComments className={`text-2xl ${activeView === "chats" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
         <button
           onClick={() => handleNavClick("calls")}
           className={`p-3 rounded-lg transition ${
-            activeView === "calls" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "calls" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Calls"
         >
-          <FaPhone className={`text-xl ${activeView === "calls" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaPhone className={`text-xl ${activeView === "calls" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
         <button
           onClick={() => handleNavClick("status")}
           className={`p-3 rounded-lg transition ${
-            activeView === "status" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "status" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Status"
         >
-          <FaCircle className={`text-xl ${activeView === "status" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaCircle className={`text-xl ${activeView === "status" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
         <button
           onClick={() => handleNavClick("communities")}
           className={`p-3 rounded-lg transition ${
-            activeView === "communities" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "communities" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Communities"
         >
-          <FaUsers className={`text-xl ${activeView === "communities" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaUsers className={`text-xl ${activeView === "communities" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
         <button
           onClick={() => handleNavClick("starred")}
           className={`p-3 rounded-lg transition ${
-            activeView === "starred" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "starred" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Starred Messages"
         >
-          <FaStar className={`text-xl ${activeView === "starred" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaStar className={`text-xl ${activeView === "starred" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
       </div>
       <div className="flex flex-col items-center space-y-4 pb-2">
         <button
           onClick={() => handleNavClick("settings")}
           className={`p-3 rounded-lg transition ${
-            activeView === "settings" ? "bg-[#313D45]" : "hover:bg-[#202C33]"
+            activeView === "settings" ? "bg-brown-medium" : "hover:bg-brown-primary/20"
           }`}
           title="Settings"
         >
-          <FaCog className={`text-xl ${activeView === "settings" ? "text-[#00A884]" : "text-[#8696A0]"}`} />
+          <FaCog className={`text-xl ${activeView === "settings" ? "text-brown-primary" : "text-brown-dark"}`} />
         </button>
         <button
           onClick={handleLogout}
           disabled={loading}
-          className="p-3 rounded-lg hover:bg-[#202C33] transition disabled:opacity-50"
+          className="p-3 rounded-lg hover:bg-brown-primary/20 transition disabled:opacity-50"
           title="Logout"
         >
-          <TbLogout2 className="text-xl text-[#8696A0]" />
+          <TbLogout2 className="text-xl text-brown-dark" />
         </button>
       </div>
     </div>

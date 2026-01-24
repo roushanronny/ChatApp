@@ -9,18 +9,18 @@ function Left() {
   const { setActiveView } = useView();
   
   return (
-    <div className="w-[30%] bg-[#111B21] text-gray-300 flex flex-col h-screen border-r border-[#313D45] overflow-hidden">
-      <div className="bg-[#202C33] px-4 py-3">
+    <div className="w-[30%] bg-brown-light text-brown-text flex flex-col h-screen border-r border-brown-medium overflow-hidden">
+      <div className="bg-brown-primary px-4 py-3">
         <h1 className="font-semibold text-lg text-white">Chats</h1>
       </div>
       <Search />
-      <div className="bg-[#202C33] px-4 py-1 flex space-x-1 border-b border-[#313D45]">
+      <div className="bg-white px-4 py-1 flex space-x-1 border-b border-brown-light">
         <button 
           onClick={() => setActiveTab("all")}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "all" 
-              ? "text-[#00A884] border-b-2 border-[#00A884]" 
-              : "text-[#8696A0] hover:text-white"
+              ? "text-brown-primary border-b-2 border-brown-primary" 
+              : "text-brown-dark hover:text-brown-text"
           }`}
         >
           All
@@ -29,8 +29,8 @@ function Left() {
           onClick={() => setActiveTab("unread")}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "unread" 
-              ? "text-[#00A884] border-b-2 border-[#00A884]" 
-              : "text-[#8696A0] hover:text-white"
+              ? "text-brown-primary border-b-2 border-brown-primary" 
+              : "text-brown-dark hover:text-brown-text"
           }`}
         >
           Unread
@@ -39,8 +39,8 @@ function Left() {
           onClick={() => setActiveTab("favourites")}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "favourites" 
-              ? "text-[#00A884] border-b-2 border-[#00A884]" 
-              : "text-[#8696A0] hover:text-white"
+              ? "text-brown-primary border-b-2 border-brown-primary" 
+              : "text-brown-dark hover:text-brown-text"
           }`}
         >
           Favourites
@@ -49,8 +49,8 @@ function Left() {
           onClick={() => setActiveTab("groups")}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "groups" 
-              ? "text-[#00A884] border-b-2 border-[#00A884]" 
-              : "text-[#8696A0] hover:text-white"
+              ? "text-brown-primary border-b-2 border-brown-primary" 
+              : "text-brown-dark hover:text-brown-text"
           }`}
         >
           Groups
@@ -60,10 +60,10 @@ function Left() {
         <Users activeTab={activeTab} />
       </div>
       {/* Archived Button */}
-      <div className="px-4 py-2 border-t border-[#313D45]">
+      <div className="px-4 py-2 border-t border-brown-medium bg-white">
         <button
           onClick={() => setActiveView("archived")}
-          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-[#2A3942] rounded-lg transition text-[#00A884]"
+          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-brown-light rounded-lg transition text-brown-primary"
         >
           <FaBox className="text-lg" />
           <span className="text-sm font-medium">Archived</span>

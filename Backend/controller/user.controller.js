@@ -4,20 +4,34 @@ import createTokenAndSaveCookie from "../jwt/generateToken.js";
 
 // Signup controller
 export const signup = async (req, res) => {
-    const { fullname, email, password, confirmPassword } = req.body;
+    const { fullname, email, phone, password, confirmPassword } = req.body;
     try {
         if (password !== confirmPassword) {
             return res.status(400).json({ error: "Passwords do not match" });
         }
-        const user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ error: "User already registered" });
+        
+        // Check if user exists with email or phone
+        const existingUser = await User.findOne({ 
+            $or: [
+                { email },
+                ...(phone ? [{ phone }] : [])
+            ]
+        });
+        if (existingUser) {
+            if (existingUser.email === email) {
+                return res.status(400).json({ error: "Email already registered" });
+            }
+            if (phone && existingUser.phone === phone) {
+                return res.status(400).json({ error: "Phone number already registered" });
+            }
         }
+        
         // Hashing the password
         const hashPassword = await bcrypt.hash(password, 10);
         const newUser = await new User({
             fullname,
             email,
+            ...(phone ? { phone } : {}),
             password: hashPassword,
         });
         await newUser.save();
@@ -41,13 +55,34 @@ export const signup = async (req, res) => {
 
 // Login controller
 export const login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, phone, password } = req.body;
     try {
-        const user = await User.findOne({ email });
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!user || !isMatch) {
+        if ((!email && !phone) || !password) {
+            return res.status(400).json({ error: "Email or phone number and password are required" });
+        }
+        
+        // Find user by email (case-insensitive) or phone number
+        const query = [];
+        if (email) {
+            query.push({ email: { $regex: new RegExp(`^${email}$`, 'i') } }); // Case-insensitive email match
+        }
+        if (phone) {
+            query.push({ phone: phone }); // Exact phone match
+        }
+        
+        const user = await User.findOne({ 
+            $or: query
+        });
+        
+        if (!user) {
             return res.status(400).json({ error: "Invalid user credential" });
         }
+        
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Invalid user credential" });
+        }
+        
         const token = createTokenAndSaveCookie(user._id, res);
         res.status(201).json({
             message: "User logged in successfully",
@@ -59,7 +94,7 @@ export const login = async (req, res) => {
             },
         });
     } catch (error) {
-        console.log(error);
+        console.log("Login error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
